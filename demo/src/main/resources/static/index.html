@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kavach - Citizen SOS Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Edge Rescue - Emergency SOS</h1>
+        <p style="color: var(--text-muted)">State your location, condition, and immediate requirement. Your message will be parsed locally by AI and prioritized instantly.</p>
+        
+        <textarea id="sosMessage" placeholder="Type your distress message here... e.g., We are trapped on the 2nd floor due to severe flooding near MG Road. 3 elderly citizens need medical attention!"></textarea>
+        <button onclick="submitSOS()">Transmit Emergency Signal</button>
+
+        <div id="statusResult" style="margin-top: 20px; display: none;" class="ticket-card">
+            <h3>Signal Processed Natively</h3>
+            <p><strong>Assigned Severity:</strong> <span id="resPriority"></span></p>
+            <p><strong>Category:</strong> <span id="resCategory"></span></p>
+            <p><strong>AI Extracted Summary:</strong> <span id="resSummary"></span></p>
+        </div>
+    </div>
+
+    <script>
+        async function submitSOS() {
+            const msg = document.getElementById('sosMessage').value;
+            if(!msg.trim()) return alert("Please enter a valid message.");
+
+            const button = document.querySelector('button');
+            button.innerText = "Transmitting via Local Mesh...";
+            button.disabled = true;
+
+            try {
+                // Adjusting target dynamically to port 8082
+                const response = await fetch('http://localhost:8082/api/tickets/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                
+                const ticket = await response.json();
+                
+                // Show result card
+                document.getElementById('statusResult').className = `ticket-card ${ticket.priority}`;
+                document.getElementById('statusResult').style.display = 'block';
+                document.getElementById('resPriority').innerText = ticket.priority;
+                document.getElementById('resCategory').innerText = ticket.category;
+                document.getElementById('resSummary').innerText = ticket.summary;
+
+                document.getElementById('sosMessage').value = ''; // clear input
+            } catch (error) {
+                alert("Transmission failed. Network isolated.");
+            } finally {
+                button.innerText = "Transmit Emergency Signal";
+                button.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kavach - Disaster Command Center</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 1000px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>🛸 Live Emergency Triage Queue</h1>
+            <span style="background: #334155; padding: 8px 15px; border-radius: 8px; font-size: 14px;">
+                🔴 Autorefresh Active (3s)
+            </span>
+        </div>
+
+        <div id="queueContainer">
+            <p style="text-align: center; color: var(--text-muted)">Waiting for real-time distress signals...</p>
+        </div>
+    </div>
+
+    <script>
+        async function fetchLiveQueue() {
+            try {
+                const response = await fetch('http://localhost:8082/api/tickets/live');
+                const tickets = await response.json();
+                const container = document.getElementById('queueContainer');
+                
+                if(tickets.length === 0) {
+                    container.innerHTML = `<p style="text-align: center; color: var(--text-muted)">All clear. No active tickets in the emergency stack.</p>`;
+                    return;
+                }
+
+                container.innerHTML = tickets.map(ticket => `
+                    <div class="ticket-card ${ticket.priority}">
+                        <span class="badge ${ticket.priority}">${ticket.priority}</span>
+                        <h3 style="margin: 0 0 10px 0; color: #fff;">[${ticket.category}] Emergency Resource Request</h3>
+                        <p style="margin: 5px 0; color: #e2e8f0;"><strong>AI Triage Verdict:</strong> ${ticket.summary}</p>
+                        <p style="margin: 5px 0; font-size: 14px; color: var(--text-muted)"><strong>Raw SOS Message:</strong> "${ticket.rawMessage}"</p>
+                        <button class="resolve-btn" onclick="resolveTicket('${ticket.id}')">Mark Resolved & Clear Route</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error("Failed fetching live emergency queue matrix.", error);
+            }
+        }
+
+        async function resolveTicket(id) {
+            try {
+                await fetch(`http://localhost:8082/api/tickets/${id}/resolve`, { method: 'DELETE' });
+                fetchLiveQueue(); // instantly update view
+            } catch (error) {
+                alert("Could not process ticket resolution.");
+            }
+        }
+
+        // Initialize and setup background polling interval loop
+        fetchLiveQueue();
+        setInterval(fetchLiveQueue, 3000);
+    </script>
+</body>
+</html>
