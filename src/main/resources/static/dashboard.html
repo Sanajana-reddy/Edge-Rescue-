@@ -1,94 +1,81 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Field Responder Command Center</title>
     <style>
-        /* Global reset & premium typography */
-        :root{
-            --canvas:#0b0f19; /* deep dark slate canvas */
-            --panel:#111827;  /* rich navy tint */
-            --panel-ink:#0f1724;
-            --muted:#94a3b8;
-            --border:#1f2937; /* sharp inner borders */
-            --accent-cyan:#22d3ee;
-            --accent-emerald:#10b981;
-            --accent-amber:#f59e0b;
-            --accent-red:#ef4444;
-            --white:#ffffff;
+        :root {
+            --canvas: #0b0f19;
+            --panel: #111827;
+            --panel-ink: #0f1724;
+            --muted: #94a3b8;
+            --border: #334155;
+            --accent-cyan: #22d3ee;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --white: #ffffff;
         }
 
-        *,*::before,*::after{box-sizing:border-box}
-        html,body{height:100%;margin:0;background:var(--canvas);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;color:var(--white)}
+        *,*::before,*::after { box-sizing: border-box; }
+        html, body { min-height: 100%; margin: 0; background: var(--canvas); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, 'Helvetica Neue', Arial, sans-serif; color: var(--white); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
-        /* Centered container matrix */
-        .container{max-width:1200px;margin:28px auto;padding:20px;display:flex;flex-direction:column;gap:20px}
+        .container { max-width: 1200px; margin: 28px auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+        .header-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+        .subtitle { color: var(--muted); font-size: 0.94rem; }
+        .tactical-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); border: 1px solid rgba(255,255,255,0.08); font-weight: 700; color: var(--accent-emerald); box-shadow: 0 6px 20px rgba(2,6,23,0.5); }
 
-        /* Header */
-        .header{display:flex;align-items:center;justify-content:space-between;gap:16px}
-        .header-left{display:flex;align-items:center;gap:14px}
-        .title{font-size:1.6rem;font-weight:800;letter-spacing:-0.01em}
-        .subtitle{color:var(--muted);font-size:0.94rem}
-        .tactical-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.02);font-weight:700;color:var(--accent-emerald);box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+        .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(2,6,23,0.35); }
+        .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.14em; font-weight: 800; }
+        .stat-value { font-size: 1.8rem; font-weight: 900; margin-top: 8px; color: var(--white); }
 
-        /* Stats grid */
-        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem}
-        .stat-card{background:var(--panel);border:1px solid var(--border);padding:16px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
-        .stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.14em;font-weight:800}
-        .stat-value{font-size:1.8rem;font-weight:900;margin-top:8px;color:var(--white)}
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+        .control { display: flex; flex-direction: column; gap: 6px; }
+        .control label { font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+        input[type="text"], select { background: #1f2937; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 8px; color: var(--white); font-weight: 600; }
+        input[type="text"]::placeholder { color: #94a3b8; }
+        input[type="text"]:focus, select:focus { outline: none; box-shadow: 0 0 0 4px rgba(34,211,238,0.08); border-color: var(--accent-cyan); }
 
-        /* Controls deck */
-        .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-        .control{display:flex;flex-direction:column;gap:6px}
-        .control label{font-size:0.75rem;color:var(--muted);font-weight:700}
-        input[type="text"],select{background:#1f2937;border:1px solid var(--border);padding:10px 12px;border-radius:8px;color:var(--white);font-weight:600}
-        input[type="text"]::placeholder{color:#94a3b8}
-        input[type="text"]:focus,select:focus{outline:none;box-shadow:0 0 0 4px rgba(34,211,238,0.08);border-color:var(--accent-cyan)}
+        #queueContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; width: 100%; }
 
-        /* Main incidents grid */
-        #queueContainer{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.5rem}
+        .incident-card { display: flex; flex-direction: column; justify-content: space-between; background: #1e293b; border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; min-height: 340px; box-shadow: 0 16px 40px rgba(0,0,0,0.25); word-break: break-word; line-height: 1.5; }
+        .incident-card .meta-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+        .incident-card h2 { margin: 0; font-size: 1.05rem; line-height: 1.35; }
+        .incident-card p { margin: 0; color: var(--muted); }
+        .incident-card p strong { color: var(--white); }
+        .incident-card .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+        .incident-card .actions .btn { min-width: 140px; }
+        .incident-card .card-footer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; margin-top: 18px; font-size: 0.9rem; color: var(--muted); }
+        .incident-card .card-footer div { word-break: break-word; }
 
-        article{background:var(--panel);border-radius:12px;border:1px solid var(--border);padding:18px;display:flex;flex-direction:column;gap:12px;transition:transform .18s ease,box-shadow .18s ease}
-        article:hover{transform:translateY(-6px);box-shadow:0 30px 60px rgba(2,6,23,0.7)}
+        .badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; font-weight: 800; font-size: 0.72rem; }
+        .priority-pill { font-weight: 900; }
 
-        /* Priority top-edge accent classes (kept for JS compatibility) */
-        .border-red-400\/50{border-top:4px solid var(--accent-red) !important}
-        .border-cyan-400\/35{border-top:4px solid var(--accent-cyan) !important}
-        .border-emerald-400\/35{border-top:4px solid var(--accent-emerald) !important}
-        .border-yellow-300\/60{border-top:4px solid var(--accent-amber) !important}
+        .btn { padding: 10px 14px; border-radius: 10px; border: 0; font-weight: 800; cursor: pointer; transition: transform .14s ease, box-shadow .14s ease; text-decoration: none; text-align: center; }
+        .btn-accept { background: var(--accent-emerald); color: #052e16; }
+        .btn-accept:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(16,185,129,0.14); }
+        .btn-resolve { background: transparent; border: 1px solid rgba(255,255,255,0.08); color: var(--white); }
+        .btn-resolve:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(2,6,23,0.25); }
+        .btn-map { background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.22); color: var(--accent-cyan); }
+        .btn-map:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(34,211,238,0.14); }
 
-        .badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-weight:800;font-size:0.72rem}
-        .priority-pill{font-weight:900}
+        .sla-timer { display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent); font-weight: 800; color: var(--muted); }
+        .sla-timer.muted { opacity: 0.85; color: #cbd5e1; }
+        @keyframes sla-pulse { 0%,100% { box-shadow: 0 0 8px rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.45); } 50% { box-shadow: 0 0 20px rgba(239,68,68,0.35); border-color: rgba(239,68,68,0.6); } }
+        .sla-breach { animation: sla-pulse 1.2s ease-in-out infinite; color: var(--accent-red); }
 
-        h2{margin:0;font-size:1.05rem}
-        p{margin:0}
+        .muted { color: var(--muted); }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-        .meta-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-
-        /* Buttons */
-        .actions{display:flex;gap:10px;align-items:center}
-        .btn{padding:10px 14px;border-radius:10px;border:0;font-weight:800;cursor:pointer;transition:transform .14s ease,box-shadow .14s ease}
-        .btn-accept{background:var(--accent-emerald);color:#052e16}
-        .btn-accept:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(16,185,129,0.14)}
-        .btn-resolve{background:transparent;border:1px solid var(--border);color:var(--white)}
-        .btn-resolve:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(2,6,23,0.25)}
-
-        /* Footer grid inside card */
-        .card-footer{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;border-top:1px solid rgba(255,255,255,0.03);padding-top:12px;font-size:0.9rem;color:var(--muted)}
-
-        /* SLA timer */
-        .sla-timer{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);font-weight:800;color:var(--muted)}
-        .sla-timer.muted{opacity:0.85;color:#cbd5e1}
-        @keyframes sla-pulse{0%,100%{box-shadow:0 0 8px rgba(239,68,68,0.18);border-color:rgba(239,68,68,0.45)}50%{box-shadow:0 0 20px rgba(239,68,68,0.35);border-color:rgba(239,68,68,0.6)}}
-        .sla-breach{animation:sla-pulse 1.2s ease-in-out infinite;color:var(--accent-red)}
-
-        /* Utilities */
-        .muted{color:var(--muted)}
-        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-
-        /* Responsive spacing */
-        @media (max-width:640px){.container{padding:14px}.title{font-size:1.25rem}}
+        @media (max-width: 640px) {
+            .container { padding: 14px; }
+            .title { font-size: 1.25rem; }
+            .incident-card .card-footer { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -207,7 +194,6 @@
             const existingCards = document.querySelectorAll('article[data-ticket-id]');
             const existingTicketIds = new Set(Array.from(existingCards).map(card => card.getAttribute('data-ticket-id')));
 
-            // Remove cards that no longer exist
             existingTicketIds.forEach(ticketId => {
                 if (!incomingTicketIds.has(ticketId)) {
                     const card = container.querySelector(`article[data-ticket-id="${escapeAttr(ticketId)}"]`);
@@ -218,7 +204,6 @@
                 }
             });
 
-            // Show empty state if none
             if (tickets.length === 0) {
                 if (existingCards.length === 0) {
                     container.innerHTML = `
@@ -279,27 +264,24 @@
                         : `<span class="sla-timer" data-ticket-id="${escapeHtml(id)}" data-start="${ticketStartEpoch}" aria-label="SLA timer"><span aria-hidden="true">⏱️</span> Waiting: 0s</span>`;
 
                     const newCardHtml = `
-                        <article class="rounded-lg border ${cardTone} p-5 shadow-xl shadow-slate-950/25" data-ticket-id="${escapeHtml(ticketIdStr)}">
-                            <div style="display:flex;justify-content:space-between;gap:12px;align-items:start;">
-                                <div style="flex:1;min-width:0">
-                                    <div class="meta-row" style="margin-bottom:8px">
-                                        <span class="badge priority-pill ${priorityTone.badge}">${priority}</span>
-                                        <span class="badge" style="border:1px solid rgba(255,255,255,0.04);background:transparent">${category}</span>
-                                        <span class="badge" style="border:1px solid rgba(255,255,255,0.04);background:transparent">${region}</span>
-                                    </div>
+                        <article class="incident-card rounded-lg border ${cardTone}" data-ticket-id="${escapeHtml(ticketIdStr)}">
+                            <div>
+                                <div class="meta-row">
+                                    <span class="badge priority-pill ${priorityTone.badge}">${priority}</span>
+                                    <span class="badge" style="border:1px solid rgba(255,255,255,0.04);background:transparent">${category}</span>
+                                    <span class="badge" style="border:1px solid rgba(255,255,255,0.04);background:transparent">${region}</span>
+                                </div>
+                                <div>
                                     <h2>${category} Emergency Resource Request</h2>
-                                    <p style="margin-top:8px;color:var(--muted);"><strong style="color:var(--white)">AI Triage Verdict:</strong> ${summary}</p>
-                                    <p style="margin-top:6px;color:var(--muted);"><strong style="color:var(--white)">Raw SOS Message:</strong> "${rawMessage}"</p>
-                                    <div style="margin-top:12px">${slaTimerHtml}</div>
+                                    <p style="margin-top:8px;"><strong>AI Triage Verdict:</strong> ${summary}</p>
+                                    <p style="margin-top:6px;"><strong>Raw SOS Message:</strong> "${rawMessage}"</p>
                                 </div>
-                                <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
-                                    <div class="actions">
-                                        ${status === 'OPEN' ? `
-                                            <button type="button" onclick="claimTicket('${escapeJs(id)}')" class="btn btn-accept">Accept Incident</button>
-                                        ` : ''}
-                                        <button type="button" onclick="resolveTicket('${escapeJs(id)}')" class="btn btn-resolve">Mark Resolved</button>
-                                    </div>
-                                </div>
+                                <div style="margin-top:12px">${slaTimerHtml}</div>
+                            </div>
+                            <div class="actions">
+                                ${status === 'OPEN' ? `<button type="button" onclick="claimTicket('${escapeJs(id)}')" class="btn btn-accept">Accept Incident</button>` : ''}
+                                <button type="button" onclick="resolveTicket('${escapeJs(id)}')" class="btn btn-resolve">Mark Resolved</button>
+                                <a href="https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}" target="_blank" rel="noopener" class="btn btn-map">Map Location</a>
                             </div>
                             <div class="card-footer">
                                 <div><span style="display:block;font-size:0.68rem;color:var(--muted);font-weight:800">Coordinates</span>${latitude}, ${longitude}</div>
@@ -313,9 +295,8 @@
             });
         }
 
-        function updateExistingCard(card, data){
+        function updateExistingCard(card, data) {
             const { priority, category, status, isClaimed, workerName, region, summary, rawMessage, latitude, longitude, createdAt, priorityTone } = data;
-            // Update badges
             const metaRow = card.querySelector('.meta-row');
             if (metaRow) {
                 metaRow.innerHTML = `
@@ -326,8 +307,8 @@
             }
 
             const title = card.querySelector('h2'); if (title) title.textContent = `${category} Emergency Resource Request`;
-            const triage = card.querySelector('p'); if (triage) triage.innerHTML = `<strong style="color:var(--white)">AI Triage Verdict:</strong> ${summary}`;
-            const rawP = card.querySelectorAll('p')[1]; if (rawP) rawP.innerHTML = `<strong style="color:var(--white)">Raw SOS Message:</strong> "${rawMessage}"`;
+            const triage = card.querySelector('p'); if (triage) triage.innerHTML = `<strong>AI Triage Verdict:</strong> ${summary}`;
+            const rawP = card.querySelectorAll('p')[1]; if (rawP) rawP.innerHTML = `<strong>Raw SOS Message:</strong> "${rawMessage}"`;
 
             const footer = card.querySelector('.card-footer');
             if (footer) {
@@ -337,11 +318,11 @@
                 if (parts[2]) parts[2].innerHTML = `<span style="display:block;font-size:0.68rem;color:var(--muted);font-weight:800">Status</span>${isClaimed ? `⚠️ Status: CLAIMED by ${workerName}` : `Status: ${status}`}`;
             }
 
-            // Update action buttons
             const actions = card.querySelector('.actions');
             if (actions) {
                 actions.innerHTML = `${status === 'OPEN' ? `<button type="button" onclick="claimTicket('${escapeJs(data.id)}')" class="btn btn-accept">Accept Incident</button>` : ''}` +
-                    `<button type="button" onclick="resolveTicket('${escapeJs(data.id)}')" class="btn btn-resolve">Mark Resolved</button>`;
+                    `<button type="button" onclick="resolveTicket('${escapeJs(data.id)}')" class="btn btn-resolve">Mark Resolved</button>` +
+                    `<a href="https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}" target="_blank" rel="noopener" class="btn btn-map">Map Location</a>`;
             }
         }
 
@@ -416,7 +397,6 @@
         function safeText(value, fallback=''){ if (value===undefined||value===null) return fallback; const text=String(value).trim(); return text===''?fallback:escapeHtml(text); }
         function safeNumber(value){ const number=Number(value); return Number.isFinite(number)?number:0; }
         function safeCoordinate(value){ const number=Number(value); return Number.isFinite(number)?number.toFixed(6):'0.000000'; }
-
         function escapeHtml(value){ return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
         function escapeJs(value){ return String(value).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
         function escapeAttr(value){ return String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
