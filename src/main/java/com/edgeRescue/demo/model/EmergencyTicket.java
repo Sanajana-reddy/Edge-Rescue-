@@ -38,11 +38,29 @@ public class EmergencyTicket implements Comparable<EmergencyTicket> {
     @Column(columnDefinition = "DOUBLE DEFAULT 0 NOT NULL")
     private double longitude = 0.0;
 
+    @Column(length = 32, nullable = false)
+    private String region = "GLOBAL";
+
+    @Column(length = 16, nullable = false)
+    private String status = "OPEN";
+
+    @Column(length = 64)
+    private String assignedWorker = "";
+
     public double getLatitude() { return latitude; }
     public void setLatitude(double lat) { this.latitude = lat; }
 
     public double getLongitude() { return longitude; }
     public void setLongitude(double lon) { this.longitude = lon; }
+
+    public String getRegion() { return region; }
+    public void setRegion(String region) { this.region = region; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getAssignedWorker() { return assignedWorker; }
+    public void setAssignedWorker(String assignedWorker) { this.assignedWorker = assignedWorker; }
 
     /** Required by JPA */
     protected EmergencyTicket() {
@@ -57,6 +75,9 @@ public class EmergencyTicket implements Comparable<EmergencyTicket> {
         this.timestamp = Instant.now();
         this.latitude = 0.0;
         this.longitude = 0.0;
+        this.region = "GLOBAL";
+        this.status = "OPEN";
+        this.assignedWorker = "";
     }
 
     private int getPriorityWeight() {
@@ -114,4 +135,3 @@ public class EmergencyTicket implements Comparable<EmergencyTicket> {
         return Objects.hash(id);
     }
 }
-

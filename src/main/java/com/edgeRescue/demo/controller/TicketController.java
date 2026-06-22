@@ -44,8 +44,56 @@ public class TicketController {
         newTicket.setLatitude(lat);
         newTicket.setLongitude(lon);
 
+        // Determine region from coordinates first, then fallback to AI-parsed text
+        String region = resolveRegion(lat, triage);
+        newTicket.setRegion(region);
+
         ticketRepository.save(newTicket);
         return newTicket;
+    }
+
+    /**
+     * Endpoint 2: Allows a field responder to claim a ticket, preventing resource conflicts.
+     */
+    @PostMapping("/{id}/claim")
+    public EmergencyTicket claimTicket(@PathVariable String id, @RequestParam String workerName) {
+        EmergencyTicket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Ticket not found: " + id));
+        ticket.setStatus("CLAIMED");
+        ticket.setAssignedWorker(workerName);
+        return ticketRepository.save(ticket);
+    }
+
+    /**
+     * Resolves the region for a ticket based on coordinates and AI-parsed text.
+     */
+    private String resolveRegion(double lat, TriageResponse triage) {
+        // Priority 1: Coordinate-based region detection
+        if (lat >= 12.0 && lat <= 14.0) {
+            return "BANGALORE";
+        }
+        if (lat >= 8.0 && lat <= 11.5) {
+            return "KERALA";
+        }
+
+        // Priority 2: Fallback to AI-parsed text (summary / category)
+        String haystack = (triage.getSummary() + " " + triage.getCategory()).toUpperCase();
+
+        // Known Indian metro cities / regions
+        String[] knownRegions = {
+            "MUMBAI", "DELHI", "CHENNAI", "KOLKATA", "HYDERABAD",
+            "BANGALORE", "KERALA", "PUNE", "AHMEDABAD", "JAIPUR",
+            "LUCKNOW", "PATNA", "BHUBANESWAR", "GUWAHATI", "CHANDIGARH"
+        };
+
+        for (String known : knownRegions) {
+            if (haystack.contains(known)) {
+                return known;
+            }
+        }
+
+        // Priority 3: Default
+        return "GLOBAL";
     }
 
     /**
@@ -122,4 +170,3 @@ public Map<String, Object> getQueueStats() {
         }
     }
 }
-

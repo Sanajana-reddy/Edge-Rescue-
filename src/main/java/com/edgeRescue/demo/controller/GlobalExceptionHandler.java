@@ -26,12 +26,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        ex.printStackTrace(); // Log the real error so we can diagnose
+        String message = ex.getMessage() == null ? "Internal server error" : ex.getMessage();
         Map<String, String> body = Map.of(
-                KEY_STATUS, "SERVICE_UNAVAILABLE",
-                KEY_ERROR, "Service Unavailable",
-                KEY_MESSAGE, "AI Triage Engine temporarily overloaded, using local manual dispatch routing."
+                KEY_STATUS, "INTERNAL_ERROR",
+                KEY_ERROR, "Internal Server Error",
+                KEY_MESSAGE, message
         );
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }
-
