@@ -24,9 +24,37 @@
         .container { max-width: 1200px; margin: 28px auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
         .header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
         .header-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
         .subtitle { color: var(--muted); font-size: 0.94rem; }
         .tactical-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); border: 1px solid rgba(255,255,255,0.08); font-weight: 700; color: var(--accent-emerald); box-shadow: 0 6px 20px rgba(2,6,23,0.5); }
+
+        .export-manifest-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 2px solid var(--accent-emerald);
+            background-color: rgba(16, 185, 129, 0.08);
+            color: var(--white);
+            font-weight: 800;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.14s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
+            letter-spacing: 0.02em;
+        }
+        .export-manifest-btn:hover {
+            background-color: rgba(16, 185, 129, 0.16);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.22);
+            transform: translateY(-2px);
+        }
+        .export-manifest-btn:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
+        }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
         .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(2,6,23,0.35); }
@@ -58,6 +86,13 @@
         .allocation-panel .allocation-text span:first-child { color: #f8fafc; font-weight: 700; font-size: 0.92rem; }
         .allocation-panel .recommendation-badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: rgba(34,211,238,0.12); color: #cffafe; padding: 8px 12px; border: 1px solid rgba(34,211,238,0.22); font-size: 0.78rem; font-weight: 700; }
 
+        .mesh-relay-panel { margin-top: 12px; background: #0b0f19; border: 1px solid #1f2937; border-radius: 12px; padding: 0.6rem; font-size: 0.75rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 8px; }
+        .mesh-chain { display: flex; align-items: center; gap: 10px; overflow-x: auto; }
+        .mesh-node-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.02); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; color: #94a3b8; font-size: 0.72rem; white-space: nowrap; }
+        .mesh-node-badge .indicator { width: 10px; height: 10px; border-radius: 999px; box-shadow: 0 6px 16px rgba(2,6,23,0.6); }
+        .mesh-connector { font-weight: 800; color: #94a3b8; }
+        .mesh-metrics { display:flex; gap:8px; align-items:center; justify-content:space-between; color:#94a3b8; font-size:0.72rem; }
+
         .badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; font-weight: 800; font-size: 0.72rem; }
         .priority-pill { font-weight: 900; }
 
@@ -80,8 +115,11 @@
         @media (max-width: 640px) {
             .container { padding: 14px; }
             .title { font-size: 1.25rem; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .header-right { width: 100%; justify-content: flex-start; }
             .incident-card .card-footer { grid-template-columns: 1fr; }
             .allocation-panel { font-size: 0.75rem; }
+            .export-manifest-btn { font-size: 0.75rem; padding: 8px 12px; }
         }
     </style>
 </head>
@@ -95,7 +133,13 @@
                 </div>
                 <div class="tactical-badge">● Tactical • Live</div>
             </div>
-            <div class="tactical-badge" style="background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--accent-cyan);">Autorefresh Active</div>
+            <div class="header-right">
+                <button type="button" onclick="exportTacticalManifest()" class="export-manifest-btn" title="Export all active incidents to CSV">
+                    <span>📥</span>
+                    <span>Export Tactical Manifest</span>
+                </button>
+                <div class="tactical-badge" style="background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--accent-cyan);">Autorefresh Active</div>
+            </div>
         </header>
 
         <section class="stats-grid" aria-hidden="false">
@@ -167,6 +211,7 @@
         const knownOpenCriticalTicketIds = new Set();
         let alarmAudioContext = null;
         const ticketTimestamps = {};
+        let lastFetchedTickets = [];
 
         function getNearestDepot(ticketLat, ticketLon, region) {
             const normalizedRegion = String(region || 'global').trim().toLowerCase();
@@ -197,6 +242,138 @@
             }
         }
 
+        /**
+         * Premium CSV Export Function - Tactical Manifest Compiler
+         * Scrapes active incident data and triggers client-side download
+         */
+        function exportTacticalManifest() {
+            try {
+                // Scrape ticket data from all rendered incident cards
+                const incidentCards = document.querySelectorAll('article[data-ticket-id]');
+                
+                if (incidentCards.length === 0) {
+                    alert('No incidents available for export. Load incidents first.');
+                    return;
+                }
+
+                // Compile CSV Header Row
+                const csvHeader = 'Incident ID,Priority,Region,Category,Summary,Latitude,Longitude,Status,Assigned Unit';
+                const csvRows = [csvHeader];
+
+                // Iterate through each incident card and extract data
+                incidentCards.forEach(card => {
+                    const incidentId = card.getAttribute('data-ticket-id') || 'N/A';
+                    
+                    // Extract metadata badges
+                    const metaRow = card.querySelector('.meta-row');
+                    let priority = 'N/A', category = 'N/A', region = 'N/A';
+                    if (metaRow) {
+                        const badges = metaRow.querySelectorAll('.badge');
+                        if (badges[0]) priority = badges[0].textContent.trim() || 'N/A';
+                        if (badges[1]) category = badges[1].textContent.trim() || 'N/A';
+                        if (badges[2]) region = badges[2].textContent.trim() || 'N/A';
+                    }
+
+                    // Extract summary (AI Triage Verdict)
+                    const triageElement = card.querySelector('p');
+                    let summary = 'N/A';
+                    if (triageElement) {
+                        const text = triageElement.textContent;
+                        const match = text.match(/AI Triage Verdict:\s*(.+?)(?:\n|$)/);
+                        summary = match ? match[1].trim() : text.trim();
+                    }
+
+                    // Extract coordinates from card footer
+                    const cardFooter = card.querySelector('.card-footer');
+                    let latitude = '0', longitude = '0';
+                    if (cardFooter) {
+                        const firstDiv = cardFooter.querySelector('div');
+                        if (firstDiv) {
+                            const coordText = firstDiv.textContent.replace('Coordinates', '').trim();
+                            const coordParts = coordText.split(',').map(s => s.trim());
+                            if (coordParts.length >= 2) {
+                                latitude = coordParts[0] || '0';
+                                longitude = coordParts[1] || '0';
+                            }
+                        }
+                    }
+
+                    // Extract status and assigned unit
+                    let status = 'OPEN', assignedUnit = 'Unassigned';
+                    if (cardFooter) {
+                        const footerDivs = cardFooter.querySelectorAll('div');
+                        if (footerDivs[2]) {
+                            const statusText = footerDivs[2].textContent;
+                            if (statusText.includes('CLAIMED')) {
+                                status = 'CLAIMED';
+                                const match = statusText.match(/CLAIMED by (.+?)(?:\s|$)/);
+                                assignedUnit = match ? match[1].trim() : 'Claimed - Pending Assignment';
+                            } else {
+                                status = statusText.replace('Status:', '').trim() || 'OPEN';
+                            }
+                        }
+                    }
+
+                    // Safely escape CSV field: handle commas, quotes, and newlines
+                    const escapeCSVField = (field) => {
+                        const str = String(field || '').trim();
+                        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                            return '"' + str.replace(/"/g, '""') + '"';
+                        }
+                        return str;
+                    };
+
+                    // Build CSV row with proper escaping
+                    const csvRow = [
+                        escapeCSVField(incidentId),
+                        escapeCSVField(priority),
+                        escapeCSVField(region),
+                        escapeCSVField(category),
+                        escapeCSVField(summary),
+                        escapeCSVField(latitude),
+                        escapeCSVField(longitude),
+                        escapeCSVField(status),
+                        escapeCSVField(assignedUnit)
+                    ].join(',');
+
+                    csvRows.push(csvRow);
+                });
+
+                // Compile final CSV string
+                const csvContent = csvRows.join('\n');
+
+                // Create Blob object with CSV MIME type
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+                // Generate tactical timestamp-based filename
+                const timestamp = new Date().getTime();
+                const manifestFileName = `EDGE_RESCUE_MANIFEST_${timestamp}.csv`;
+
+                // Create temporary anchor element for download
+                const tempLink = document.createElement('a');
+                const objectUrl = URL.createObjectURL(blob);
+                
+                tempLink.setAttribute('href', objectUrl);
+                tempLink.setAttribute('download', manifestFileName);
+                tempLink.style.display = 'none';
+
+                // Trigger browser download
+                document.body.appendChild(tempLink);
+                tempLink.click();
+
+                // Cleanup: revoke object URL and remove temporary anchor
+                URL.revokeObjectURL(objectUrl);
+                document.body.removeChild(tempLink);
+
+                // Confirmation feedback
+                console.log(`✓ Tactical Manifest exported: ${manifestFileName} (${incidentCards.length} incidents)`);
+
+            } catch (error) {
+                console.error('Tactical Manifest export failed:', error);
+                alert('Export failed. Please check the console for details.');
+            }
+        }
+
         async function fetchLiveQueue() {
             const search = document.getElementById('searchBar').value.trim();
             const priority = document.getElementById('priorityFilter').value;
@@ -220,6 +397,7 @@
                     ? tickets.filter(ticket => normalizeRegion(getTicketRegion(ticket)) === normalizeRegion(selectedRegion))
                     : tickets;
 
+                lastFetchedTickets = filteredTickets;
                 trackCriticalOpenTickets(filteredTickets);
                 renderTickets(filteredTickets);
             } catch (error) {
@@ -325,6 +503,9 @@
                                     </div>
                                     <div class="recommendation-badge">${escapeHtml(recommendation)}</div>
                                 </div>
+                                <div class="mesh-relay-panel">
+                                    ${renderMeshPanelHtml(ticketIdStr)}
+                                </div>
                             </div>
                             <div class="actions">
                                 ${status === 'OPEN' ? `<button type="button" onclick="claimTicket('${escapeJs(id)}')" class="btn btn-accept">Accept Incident</button>` : ''}
@@ -366,6 +547,13 @@
                     </div>
                     <div class="recommendation-badge">${escapeHtml(recommendation)}</div>
                 `;
+                // update or insert mesh panel directly after allocation panel
+                const existingMesh = card.querySelector('.mesh-relay-panel');
+                if (existingMesh) {
+                    existingMesh.innerHTML = renderMeshPanelHtml(id);
+                } else {
+                    allocationPanel.insertAdjacentHTML('afterend', `<div class="mesh-relay-panel">${renderMeshPanelHtml(id)}</div>`);
+                }
             }
 
             const footer = card.querySelector('.card-footer');
@@ -484,6 +672,66 @@
         }
 
         setInterval(updateSlaTimers,1000);
+
+        // Mesh P2P Relay Simulator
+        function deterministicHash(input) {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < input.length; i++) {
+                h ^= input.charCodeAt(i);
+                h = Math.imul(h, 16777619) >>> 0;
+            }
+            return h;
+        }
+
+        function generateMeshPath(ticketId, lat = 0, lon = 0) {
+            const idStr = String(ticketId || '0');
+            const h = deterministicHash(idStr + '-mesh-' + String(lat) + ',' + String(lon));
+            const priority = (h % 100) < 10 ? 'CRITICAL' : (h % 100) < 60 ? 'MEDIUM' : 'LOW';
+            const nodes = [];
+            const nodeCount = priority === 'CRITICAL' ? 2 + (h % 2) : 1;
+            const names = ['Node-Alpha','Node-Beta','Node-Gamma','Node-Delta','Node-Echo','Node-Zeta'];
+            let cumulativeLatency = 0;
+            let cumulativeDistance = 0;
+            // scale factor derived from coordinates to influence hop distances
+            const latFrac = Math.abs(lat) % 1;
+            const lonFrac = Math.abs(lon) % 1;
+            const scale = 1 + ((latFrac + lonFrac) / 2);
+            for (let i = 0; i < nodeCount; i++) {
+                const pick = names[(h + i * 13) % names.length] + (i === 0 ? ' [Signal: Strong]' : (h % 3 === 0 ? ' [Signal: Muted]' : ' [Signal: Stable]'));
+                const signalStrength = (50 + ((h >> (i+1)) % 51));
+                const baseHopLatency = 10 + ((h >> i) % 90);
+                const hopLatency = Math.max(5, Math.round(baseHopLatency / (signalStrength / 100)));
+                const baseHopDistance = (1 + ((h >> (i+2)) % 40));
+                const hopDistance = Math.round(baseHopDistance * scale * 10) / 10;
+                cumulativeLatency += hopLatency;
+                cumulativeDistance += hopDistance;
+                nodes.push({ name: pick, latencyMs: hopLatency, distanceKm: hopDistance, strength: signalStrength });
+            }
+            // base node
+            const baseLatency = Math.round(5 + (h % 20));
+            cumulativeLatency += baseLatency;
+            const baseDistance = Math.round((1 + (h % 20)) * scale * 10) / 10;
+            nodes.push({ name: 'Base-Node', latencyMs: baseLatency, distanceKm: baseDistance, strength: 90 });
+            return { nodes, cumulativeLatency, cumulativeDistance: Math.round(cumulativeDistance * 10) / 10, priority };
+        }
+
+        function renderMeshPanelHtml(ticketId, lat = 0, lon = 0) {
+            const path = generateMeshPath(ticketId, Number(lat) || 0, Number(lon) || 0);
+            const parts = [];
+            parts.push(`<div class="mesh-chain">`);
+            parts.push(`<span class="mesh-node-badge">📱 Citizen</span>`);
+            const connectors = [];
+            path.nodes.forEach((n, idx) => {
+                const color = n.strength > 70 ? '#10b981' : (n.strength > 45 ? '#f59e0b' : '#f97316');
+                parts.push(`<span class="mesh-connector" style="color:${color};">➔</span>`);
+                parts.push(`<span class="mesh-node-badge"><span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:${color};margin-right:6px;"></span>${escapeHtml(n.name)}</span>`);
+            });
+            parts.push(`<span class="mesh-connector">➔</span>`);
+            parts.push(`<span class="mesh-node-badge">💻 Command Base</span>`);
+            parts.push(`</div>`);
+            parts.push(`<div class="mesh-metrics"><span>Mesh Latency: ${escapeHtml(String(path.cumulativeLatency))}ms</span><span>Total Hop Distance: ${escapeHtml(String(path.cumulativeDistance))} km</span></div>`);
+            return parts.join('');
+        }
 
         updateAnalyticsCounters();
         fetchLiveQueue();
