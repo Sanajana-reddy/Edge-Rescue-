@@ -14,4 +14,4 @@ COPY --from=build /app/target/*.jar app.jar
 # Spring Boot automatically picks up this variable.
 EXPOSE 8082
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dserver.port=${PORT:-8082}", "-jar", "app.jar"]
