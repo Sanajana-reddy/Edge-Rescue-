@@ -56,7 +56,7 @@
             box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
         }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
         .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(2,6,23,0.35); }
         .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.14em; font-weight: 800; }
         .stat-value { font-size: 1.8rem; font-weight: 900; margin-top: 8px; color: var(--white); }
@@ -158,12 +158,16 @@
                 <div id="statCritical" class="stat-value">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">⚠️ SLA Breach Counter</div>
-                <div id="statSlaBreach" class="stat-value">0</div>
+                <div class="stat-label">Total Active Records</div>
+                <div id="statTotal" class="stat-value">0</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Medical Cases</div>
                 <div id="statMedical" class="stat-value">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">⚠️ SLA Breach Counter</div>
+                <div id="statSlaBreach" class="stat-value">0</div>
             </div>
         </section>
 
@@ -599,7 +603,7 @@
                 const response = await fetch(`/api/tickets/${encodeURIComponent(id)}/claim?workerName=${encodeURIComponent(workerName.trim())}`, { method: 'POST' });
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 await fetchLiveQueue();
-                await updateAnalyticsCounters();
+                await loadTacticalMatrixGrid();
             } catch (error) {
                 console.error('Could not claim ticket.', error);
                 alert('Could not claim this incident.');
@@ -611,24 +615,27 @@
                 const response = await fetch(`${API_BASE}/api/tickets/${encodeURIComponent(id)}/resolve`, { method: 'DELETE' });
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 await fetchLiveQueue();
-                await updateAnalyticsCounters();
+                await loadTacticalMatrixGrid();
             } catch (error) {
                 console.error('Could not process ticket resolution.', error);
                 alert('Could not process ticket resolution.');
             }
         }
 
-        async function updateAnalyticsCounters() {
+        async function loadTacticalMatrixGrid() {
             try {
                 const response = await fetch(`/api/tickets/stats`);
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 const stats = await response.json();
-                document.getElementById('statCritical').innerText = safeNumber(stats.critical);
+                document.getElementById('statTotal').innerText = safeNumber(stats.totalActive ?? stats.total ?? lastFetchedTickets.length);
+                document.getElementById('statCritical').innerText = stats.critical || 0;
                 document.getElementById('statMedical').innerText = safeNumber(stats.medical);
             } catch (error) {
                 console.error('Analytics fetch offline.', error);
             }
         }
+
+        const updateAnalyticsCounters = loadTacticalMatrixGrid;
 
         function trackCriticalOpenTickets(tickets) {
             tickets.forEach(ticket => {
@@ -665,7 +672,7 @@
 
         function formatSlaElapsed(totalSeconds){ totalSeconds = Math.max(0, Math.floor(totalSeconds)); if (totalSeconds < 60) return `Waiting: ${totalSeconds}s`; const m = Math.floor(totalSeconds/60); const s = totalSeconds % 60; return `Waiting: ${m}m ${s}s`; }
 
-        function updateSlaTimers(){
+        function updateLiveSlaTimers(){
             const nowMs = Date.now();
             const timers = document.querySelectorAll('.sla-timer[data-start]');
             timers.forEach(timerEl => {
@@ -688,7 +695,8 @@
             }
         }
 
-        setInterval(updateSlaTimers,1000);
+        const updateSlaTimers = updateLiveSlaTimers;
+        setInterval(updateLiveSlaTimers,1000);
 
         // Mesh P2P Relay Simulator
         function deterministicHash(input) {
@@ -750,9 +758,9 @@
             return parts.join('');
         }
 
-        updateAnalyticsCounters();
+        loadTacticalMatrixGrid();
         fetchLiveQueue();
-        setInterval(updateAnalyticsCounters,3000);
+        setInterval(loadTacticalMatrixGrid,3000);
         setInterval(fetchLiveQueue,3000);
     </script>
 </body>
