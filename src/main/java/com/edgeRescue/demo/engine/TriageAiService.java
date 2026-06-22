@@ -8,13 +8,22 @@ import org.springframework.stereotype.Service;
 public class TriageAiService {
 
     private final ChatClient chatClient;
+    private final boolean isCloudEnvironment;
 
     // Spring AI automatically configures and injects this Builder based on application.properties
     public TriageAiService(ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();
+        // Render automatically sets the environment variable RENDER=true
+        this.isCloudEnvironment = System.getenv("RENDER") != null || "true".equalsIgnoreCase(System.getenv("IS_CLOUD"));
     }
 
     public TriageResponse parseEmergency(String rawMessage) {
+        // 🛡️ CRITICAL FIX: If running on Render, completely skip Spring AI to prevent 502 loop timeouts
+        if (isCloudEnvironment) {
+            System.out.println("☁️ Render Environment Detected: Bypassing Ollama network calls to use local rules engine.");
+            return executeDeterministicFallback(rawMessage);
+        }
+
         String systemPrompt = """
             You are a disaster response triage AI operating during critical monsoons.
             Analyze the user's distress message. Extract and return exactly three values in this precise format:
@@ -25,7 +34,6 @@ public class TriageAiService {
             Do not include any greetings, markdown, or extra text.
             """;
 
-        // Cloud-safe: if the local Ollama / LLM is unavailable, deterministically fall back.
         try {
             String aiRawResult = chatClient.prompt()
                     .system(systemPrompt)
@@ -35,37 +43,46 @@ public class TriageAiService {
 
             return cleanAndParseResponse(aiRawResult);
         } catch (Exception e) {
-            String msgLower = rawMessage == null ? "" : rawMessage.toLowerCase();
-
-            // FLOOD rules
-            if (containsAny(msgLower, "flood", "water", "submerged")) {
-                boolean trappedOrDrowning = containsAny(msgLower, "trapped", "drowning");
-                String priority = trappedOrDrowning ? "CRITICAL" : "MEDIUM";
-                String summary = trappedOrDrowning
-                        ? "Possible flood victims are trapped or drowning. Immediate rescue is required."
-                        : "Potential flood or submerged danger reported. Dispatch assistance and monitor closely.";
-                return new TriageResponse(priority, "FLOOD", summary);
-            }
-
-            // MEDICAL rules
-            if (containsAny(msgLower, "injury", "blood", "accident", "medical")) {
-                boolean unconsciousOrSevere = containsAny(msgLower, "unconscious", "severe");
-                String priority = unconsciousOrSevere ? "CRITICAL" : "MEDIUM";
-                String summary = unconsciousOrSevere
-                        ? "Reported medical emergency with possible unconscious/severe injuries. Urgent medical response needed."
-                        : "Reported injury/medical incident. Send medical help and assess severity.";
-                return new TriageResponse(priority, "MEDICAL", summary);
-            }
-
-            // RESCUE rules
-            if (containsAny(msgLower, "rescue", "trapped", "stuck")) {
-                String summary = "People may be trapped or require rescue due to ongoing danger. Immediate rescue team deployment recommended.";
-                return new TriageResponse("CRITICAL", "RESCUE", summary);
-            }
-
-            // Default OTHER rules
-            return new TriageResponse("LOW", "OTHER", "[Cloud Engine] " + snippet(rawMessage));
+            System.out.println("⚠️ Local Ollama call failed. Executing fallback rules.");
+            return executeDeterministicFallback(rawMessage);
         }
+    }
+
+    /**
+     * Reusable, high-speed fallback processing method used both for cloud environments 
+     * and local system fallback failures.
+     */
+    private TriageResponse executeDeterministicFallback(String rawMessage) {
+        String msgLower = rawMessage == null ? "" : rawMessage.toLowerCase();
+
+        // FLOOD rules
+        if (containsAny(msgLower, "flood", "water", "submerged", "river")) {
+            boolean trappedOrDrowning = containsAny(msgLower, "trapped", "drowning", "roof");
+            String priority = trappedOrDrowning ? "CRITICAL" : "MEDIUM";
+            String summary = trappedOrDrowning
+                    ? "Possible flood victims are trapped or drowning. Immediate rescue is required."
+                    : "Potential flood or submerged danger reported. Dispatch assistance and monitor closely.";
+            return new TriageResponse(priority, "FLOOD", summary);
+        }
+
+        // MEDICAL rules
+        if (containsAny(msgLower, "injury", "blood", "accident", "medical", "bleeding")) {
+            boolean unconsciousOrSevere = containsAny(msgLower, "unconscious", "severe", "dying");
+            String priority = unconsciousOrSevere ? "CRITICAL" : "MEDIUM";
+            String summary = unconsciousOrSevere
+                    ? "Reported medical emergency with possible unconscious/severe injuries. Urgent medical response needed."
+                    : "Reported injury/medical incident. Send medical help and assess severity.";
+            return new TriageResponse(priority, "MEDICAL", summary);
+        }
+
+        // RESCUE rules
+        if (containsAny(msgLower, "rescue", "trapped", "stuck", "landslide")) {
+            String summary = "People may be trapped or require rescue due to ongoing danger. Immediate rescue team deployment recommended.";
+            return new TriageResponse("CRITICAL", "RESCUE", summary);
+        }
+
+        // Default OTHER rules
+        return new TriageResponse("LOW", "OTHER", "[Cloud Engine] " + snippet(rawMessage));
     }
 
     private boolean containsAny(String msgLower, String... keywords) {
@@ -108,4 +125,3 @@ public class TriageAiService {
         return response;
     }
 }
-
