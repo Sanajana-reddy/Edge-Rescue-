@@ -139,18 +139,23 @@
             try {
                 button.innerText = 'Transmitting SOS...';
 
+                const controller = new AbortController();
+                const timeoutMs = 20000; // prevent “stuck transmitting forever”
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
                 const response = await fetch('/api/tickets/submit', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
+                    signal: controller.signal,
                     body: JSON.stringify({
                         message,
                         latitude: parseFloat(latitude) || 0.0,
                         longitude: parseFloat(longitude) || 0.0
                     })
-                });
+                }).finally(() => clearTimeout(timeoutId));
 
                 if (!response.ok) {
                     const errorPayload = await response.json().catch(() => ({}));
@@ -162,7 +167,11 @@
                 document.getElementById('sosMessage').value = '';
             } catch (error) {
                 console.error('Transmission failed.', error);
-                alert(`Transmission failed: ${error.message || 'Unknown error'}`);
+                if (error && error.name === 'AbortError') {
+                    alert('Transmission timed out. Please try again.');
+                } else {
+                    alert(`Transmission failed: ${error.message || 'Unknown error'}`);
+                }
             } finally {
                 // CRITICAL: guarantee unlock under every condition
                 if (button) {
