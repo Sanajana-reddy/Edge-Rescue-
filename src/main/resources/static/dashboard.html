@@ -126,7 +126,7 @@
             if (category) params.set('category', category);
 
             try {
-                const response = await fetch(`${API_BASE}/api/tickets/live?${params.toString()}`);
+                const response = await fetch(`/api/tickets/live?${params.toString()}`);
                 if (!response.ok) {
                     throw new Error(`API returned ${response.status}`);
                 }
@@ -232,7 +232,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/tickets/${encodeURIComponent(id)}/claim?workerName=${encodeURIComponent(workerName.trim())}`, {
+                const response = await fetch(`/api/tickets/${encodeURIComponent(id)}/claim?workerName=${encodeURIComponent(workerName.trim())}`, {
                     method: 'POST'
                 });
 
@@ -265,7 +265,7 @@
 
         async function updateAnalyticsCounters() {
             try {
-                const response = await fetch(`${API_BASE}/api/tickets/stats`);
+                const response = await fetch(`/api/tickets/stats`);
                 if (!response.ok) {
                     throw new Error(`API returned ${response.status}`);
                 }

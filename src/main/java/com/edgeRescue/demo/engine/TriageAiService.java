@@ -25,19 +25,68 @@ public class TriageAiService {
             Do not include any greetings, markdown, or extra text.
             """;
 
-        String aiRawResult;
+        // Cloud-safe: if the local Ollama / LLM is unavailable, deterministically fall back.
         try {
-            aiRawResult = chatClient.prompt()
+            String aiRawResult = chatClient.prompt()
                     .system(systemPrompt)
                     .user(rawMessage)
                     .call()
                     .content();
-        } catch (Exception ex) {
-            System.err.println("AI triage unavailable, using fallback response: " + ex.getMessage());
-            return new TriageResponse("MEDIUM", "OTHER", "Emergency logged for operator review.");
-        }
 
-        return cleanAndParseResponse(aiRawResult);
+            return cleanAndParseResponse(aiRawResult);
+        } catch (Exception e) {
+            String msgLower = rawMessage == null ? "" : rawMessage.toLowerCase();
+
+            // FLOOD rules
+            if (containsAny(msgLower, "flood", "water", "submerged")) {
+                boolean trappedOrDrowning = containsAny(msgLower, "trapped", "drowning");
+                String priority = trappedOrDrowning ? "CRITICAL" : "MEDIUM";
+                String summary = trappedOrDrowning
+                        ? "Possible flood victims are trapped or drowning. Immediate rescue is required."
+                        : "Potential flood or submerged danger reported. Dispatch assistance and monitor closely.";
+                return new TriageResponse(priority, "FLOOD", summary);
+            }
+
+            // MEDICAL rules
+            if (containsAny(msgLower, "injury", "blood", "accident", "medical")) {
+                boolean unconsciousOrSevere = containsAny(msgLower, "unconscious", "severe");
+                String priority = unconsciousOrSevere ? "CRITICAL" : "MEDIUM";
+                String summary = unconsciousOrSevere
+                        ? "Reported medical emergency with possible unconscious/severe injuries. Urgent medical response needed."
+                        : "Reported injury/medical incident. Send medical help and assess severity.";
+                return new TriageResponse(priority, "MEDICAL", summary);
+            }
+
+            // RESCUE rules
+            if (containsAny(msgLower, "rescue", "trapped", "stuck")) {
+                String summary = "People may be trapped or require rescue due to ongoing danger. Immediate rescue team deployment recommended.";
+                return new TriageResponse("CRITICAL", "RESCUE", summary);
+            }
+
+            // Default OTHER rules
+            return new TriageResponse("LOW", "OTHER", "[Cloud Engine] " + snippet(rawMessage));
+        }
+    }
+
+    private boolean containsAny(String msgLower, String... keywords) {
+        if (msgLower == null) {
+            return false;
+        }
+        for (String k : keywords) {
+            if (k != null && msgLower.contains(k.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String snippet(String rawMessage) {
+        String safe = rawMessage == null ? "" : rawMessage.trim();
+        if (safe.isEmpty()) {
+            return "No message content provided.";
+        }
+        int maxLen = 160;
+        return safe.length() <= maxLen ? safe : safe.substring(0, maxLen).trim() + "...";
     }
 
     private TriageResponse cleanAndParseResponse(String rawText) {
@@ -59,3 +108,4 @@ public class TriageAiService {
         return response;
     }
 }
+
