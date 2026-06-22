@@ -25,11 +25,17 @@ public class TriageAiService {
             Do not include any greetings, markdown, or extra text.
             """;
 
-        String aiRawResult = chatClient.prompt()
-                .system(systemPrompt)
-                .user(rawMessage)
-                .call()
-                .content();
+        String aiRawResult;
+        try {
+            aiRawResult = chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(rawMessage)
+                    .call()
+                    .content();
+        } catch (Exception ex) {
+            System.err.println("AI triage unavailable, using fallback response: " + ex.getMessage());
+            return new TriageResponse("MEDIUM", "OTHER", "Emergency logged for operator review.");
+        }
 
         return cleanAndParseResponse(aiRawResult);
     }

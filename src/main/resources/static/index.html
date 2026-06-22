@@ -19,42 +19,86 @@
             <p><strong>Assigned Severity:</strong> <span id="resPriority"></span></p>
             <p><strong>Category:</strong> <span id="resCategory"></span></p>
             <p><strong>AI Extracted Summary:</strong> <span id="resSummary"></span></p>
+            <p><strong>Latitude:</strong> <span id="resLatitude">0.000000</span></p>
+            <p><strong>Longitude:</strong> <span id="resLongitude">0.000000</span></p>
         </div>
     </div>
 
     <script>
-        async function submitSOS() {
+        function submitSOS() {
             const msg = document.getElementById('sosMessage').value;
             if(!msg.trim()) return alert("Please enter a valid message.");
 
             const button = document.querySelector('button');
-            button.innerText = "Transmitting via Local Mesh...";
+            button.innerText = "Transmitting Coordinates & SOS...";
             button.disabled = true;
 
+            // Use browser Geolocation API
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        // Success: Captured actual coordinates
+                        sendData(msg, position.coords.latitude, position.coords.longitude, button);
+                    },
+                    async (error) => {
+                        // Fallback: Permission denied or unavailable, send default coordinates
+                        console.warn("Geolocation missing, transmitting message without coordinates.");
+                        sendData(msg, 0.0, 0.0, button);
+                    }
+                );
+            } else {
+                sendData(msg, 0.0, 0.0, button);
+            }
+        }
+
+        async function sendData(msg, lat, lon, button) {
             try {
-                // Adjusting target dynamically to port 8082
                 const response = await fetch('http://localhost:8082/api/tickets/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: msg })
+                    body: JSON.stringify({ 
+                        message: msg,
+                        latitude: lat,
+                        longitude: lon
+                    })
                 });
-                
-                const ticket = await response.json();
-                
-                // Show result card
-                document.getElementById('statusResult').className = `ticket-card ${ticket.priority}`;
-                document.getElementById('statusResult').style.display = 'block';
-                document.getElementById('resPriority').innerText = ticket.priority;
-                document.getElementById('resCategory').innerText = ticket.category;
-                document.getElementById('resSummary').innerText = ticket.summary;
 
-                document.getElementById('sosMessage').value = ''; // clear input
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}`);
+                }
+
+                const ticket = await response.json();
+                const priority = safeText(ticket.priority, 'MEDIUM');
+                const category = safeText(ticket.category, 'OTHER');
+                const summary = safeText(ticket.summary, 'Emergency logged.');
+                const latitude = safeCoordinate(ticket.latitude);
+                const longitude = safeCoordinate(ticket.longitude);
+
+                document.getElementById('statusResult').className = `ticket-card ${priority}`;
+                document.getElementById('statusResult').style.display = 'block';
+                document.getElementById('resPriority').innerText = priority;
+                document.getElementById('resCategory').innerText = category;
+                document.getElementById('resSummary').innerText = summary;
+                document.getElementById('resLatitude').innerText = latitude;
+                document.getElementById('resLongitude').innerText = longitude;
+
+                document.getElementById('sosMessage').value = '';
             } catch (error) {
-                alert("Transmission failed. Network isolated.");
+                console.error("Transmission failed.", error);
+                alert("Transmission failed.");
             } finally {
                 button.innerText = "Transmit Emergency Signal";
                 button.disabled = false;
             }
+        }
+
+        function safeText(value, fallback) {
+            return value === undefined || value === null || value === '' ? fallback : value;
+        }
+
+        function safeCoordinate(value) {
+            const number = Number(value);
+            return Number.isFinite(number) ? number.toFixed(6) : '0.000000';
         }
     </script>
 </body>
