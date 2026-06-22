@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -52,6 +52,12 @@
         .incident-card .card-footer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; margin-top: 18px; font-size: 0.9rem; color: var(--muted); }
         .incident-card .card-footer div { word-break: break-word; }
 
+        .allocation-panel { margin-top: 14px; background: rgba(15,23,42,0.95); border: 1px dashed #334155; border-radius: 14px; padding: 0.75rem; font-size: 0.8rem; color: #cbd5e1; display: grid; gap: 0.55rem; }
+        .allocation-panel div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .allocation-panel .allocation-text { display: flex; flex-direction: column; gap: 4px; }
+        .allocation-panel .allocation-text span:first-child { color: #f8fafc; font-weight: 700; font-size: 0.92rem; }
+        .allocation-panel .recommendation-badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: rgba(34,211,238,0.12); color: #cffafe; padding: 8px 12px; border: 1px solid rgba(34,211,238,0.22); font-size: 0.78rem; font-weight: 700; }
+
         .badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; font-weight: 800; font-size: 0.72rem; }
         .priority-pill { font-weight: 900; }
 
@@ -75,6 +81,7 @@
             .container { padding: 14px; }
             .title { font-size: 1.25rem; }
             .incident-card .card-footer { grid-template-columns: 1fr; }
+            .allocation-panel { font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -150,10 +157,45 @@
     </div>
 
     <script>
+        const RESCUE_DEPOTS = [
+            { name: "Bangalore North Command Depot", lat: 13.0350, lon: 77.5900, region: "bangalore" },
+            { name: "Central Maritime & Flood Outpost", lat: 10.0100, lon: 76.3300, region: "kerala" },
+            { name: "Regional Emergency Logistics Hub", lat: 12.9500, lon: 77.5000, region: "global" }
+        ];
+
         const API_BASE = 'http://localhost:8082';
         const knownOpenCriticalTicketIds = new Set();
         let alarmAudioContext = null;
         const ticketTimestamps = {};
+
+        function getNearestDepot(ticketLat, ticketLon, region) {
+            const normalizedRegion = String(region || 'global').trim().toLowerCase();
+            const depot = RESCUE_DEPOTS.find(d => d.region === normalizedRegion) || RESCUE_DEPOTS.find(d => d.region === 'global');
+            const distance = calculateDistance(ticketLat, ticketLon, depot.lat, depot.lon);
+            return { depotName: depot.name, distanceKm: distance };
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const toRad = x => x * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const r = 6371;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return Math.round((r * c) * 10) / 10;
+        }
+
+        function getAssetRecommendation(category) {
+            switch (String(category || 'OTHER').trim().toUpperCase()) {
+                case 'FLOOD': return '💡 Recommended Asset: Inflatable Rescue Boat + Life Jackets';
+                case 'MEDICAL': return '💡 Recommended Asset: Advanced Field Ambulance + Trauma Kit';
+                case 'RESCUE':
+                case 'BLOCKAGE':
+                    return '💡 Recommended Asset: Tactical Extraction Truck + Hydraulic Chainsaw';
+                default:
+                    return '💡 Recommended Asset: Rapid Response Support Package';
+            }
+        }
 
         async function fetchLiveQueue() {
             const search = document.getElementById('searchBar').value.trim();
@@ -232,9 +274,12 @@
                 const createdAt = ticket.timestamp ? new Date(ticket.timestamp).toLocaleString() : 'Pending timestamp';
                 const isClaimed = status === 'CLAIMED';
                 const priorityTone = getPriorityTone(priority);
-                const cardTone = isClaimed
-                    ? 'border-yellow-300/60 bg-yellow-500/10'
-                    : `${priorityTone.border} bg-slate-900/85`;
+                const slaTimerHtml = isClaimed
+                    ? `<span class="sla-timer muted" aria-label="SLA timer"><span aria-hidden="true">⏱️</span> Handled</span>`
+                    : `<span class="sla-timer" data-ticket-id="${escapeHtml(id)}" data-start="${Date.now()}" aria-label="SLA timer"><span aria-hidden="true">⏱️</span> Waiting: 0s</span>`;
+
+                const nearest = getNearestDepot(Number(latitude), Number(longitude), region);
+                const recommendation = getAssetRecommendation(category);
 
                 const existingCard = container.querySelector(`article[data-ticket-id="${escapeAttr(ticketIdStr)}"]`);
 
@@ -252,19 +297,15 @@
                         longitude,
                         createdAt,
                         priorityTone,
-                        cardTone,
-                        id:ticketIdStr
+                        id: ticketIdStr,
+                        slaTimerHtml,
+                        nearest,
+                        recommendation
                     });
                 } else {
-                    const ticketStartEpoch = Date.now();
-                    ticketTimestamps[ticketIdStr] = ticketStartEpoch;
-
-                    const slaTimerHtml = isClaimed
-                        ? `<span class="sla-timer muted" aria-label="SLA timer"><span aria-hidden="true">⏱️</span> Handled</span>`
-                        : `<span class="sla-timer" data-ticket-id="${escapeHtml(id)}" data-start="${ticketStartEpoch}" aria-label="SLA timer"><span aria-hidden="true">⏱️</span> Waiting: 0s</span>`;
-
+                    ticketTimestamps[ticketIdStr] = Date.now();
                     const newCardHtml = `
-                        <article class="incident-card rounded-lg border ${cardTone}" data-ticket-id="${escapeHtml(ticketIdStr)}">
+                        <article class="incident-card rounded-lg border ${priorityTone.border} bg-slate-900/85" data-ticket-id="${escapeHtml(ticketIdStr)}">
                             <div>
                                 <div class="meta-row">
                                     <span class="badge priority-pill ${priorityTone.badge}">${priority}</span>
@@ -277,6 +318,13 @@
                                     <p style="margin-top:6px;"><strong>Raw SOS Message:</strong> "${rawMessage}"</p>
                                 </div>
                                 <div style="margin-top:12px">${slaTimerHtml}</div>
+                                <div class="allocation-panel">
+                                    <div class="allocation-text">
+                                        <span>🚛 Nearest Depot: ${escapeHtml(nearest.depotName)}</span>
+                                        <span style="color:#94a3b8; font-size:0.78rem;">${escapeHtml(nearest.distanceKm.toFixed(1))} km away</span>
+                                    </div>
+                                    <div class="recommendation-badge">${escapeHtml(recommendation)}</div>
+                                </div>
                             </div>
                             <div class="actions">
                                 ${status === 'OPEN' ? `<button type="button" onclick="claimTicket('${escapeJs(id)}')" class="btn btn-accept">Accept Incident</button>` : ''}
@@ -296,7 +344,7 @@
         }
 
         function updateExistingCard(card, data) {
-            const { priority, category, status, isClaimed, workerName, region, summary, rawMessage, latitude, longitude, createdAt, priorityTone } = data;
+            const { priority, category, status, isClaimed, workerName, region, summary, rawMessage, latitude, longitude, createdAt, priorityTone, id, slaTimerHtml, nearest, recommendation } = data;
             const metaRow = card.querySelector('.meta-row');
             if (metaRow) {
                 metaRow.innerHTML = `
@@ -309,6 +357,16 @@
             const title = card.querySelector('h2'); if (title) title.textContent = `${category} Emergency Resource Request`;
             const triage = card.querySelector('p'); if (triage) triage.innerHTML = `<strong>AI Triage Verdict:</strong> ${summary}`;
             const rawP = card.querySelectorAll('p')[1]; if (rawP) rawP.innerHTML = `<strong>Raw SOS Message:</strong> "${rawMessage}"`;
+            const allocationPanel = card.querySelector('.allocation-panel');
+            if (allocationPanel) {
+                allocationPanel.innerHTML = `
+                    <div class="allocation-text">
+                        <span>🚛 Nearest Depot: ${escapeHtml(nearest.depotName)}</span>
+                        <span style="color:#94a3b8; font-size:0.78rem;">${escapeHtml(nearest.distanceKm.toFixed(1))} km away</span>
+                    </div>
+                    <div class="recommendation-badge">${escapeHtml(recommendation)}</div>
+                `;
+            }
 
             const footer = card.querySelector('.card-footer');
             if (footer) {
@@ -320,9 +378,14 @@
 
             const actions = card.querySelector('.actions');
             if (actions) {
-                actions.innerHTML = `${status === 'OPEN' ? `<button type="button" onclick="claimTicket('${escapeJs(data.id)}')" class="btn btn-accept">Accept Incident</button>` : ''}` +
-                    `<button type="button" onclick="resolveTicket('${escapeJs(data.id)}')" class="btn btn-resolve">Mark Resolved</button>` +
+                actions.innerHTML = `${status === 'OPEN' ? `<button type="button" onclick="claimTicket('${escapeJs(id)}')" class="btn btn-accept">Accept Incident</button>` : ''}` +
+                    `<button type="button" onclick="resolveTicket('${escapeJs(id)}')" class="btn btn-resolve">Mark Resolved</button>` +
                     `<a href="https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}" target="_blank" rel="noopener" class="btn btn-map">Map Location</a>`;
+            }
+
+            const slaContainer = card.querySelector('.sla-timer');
+            if (slaContainer && !isClaimed) {
+                slaContainer.setAttribute('data-start', `${ticketTimestamps[id] || Date.now()}`);
             }
         }
 
