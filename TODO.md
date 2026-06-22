@@ -1,7 +1,12 @@
- # EdgeRescue Cloud Deployment Verification Tasks
+# TODO - dashboard.html SLA timer integration
 
-- [ ] Update/confirm `POST /api/tickets/submit` in `TicketController.java` uses robust `Map<String, Object>` extraction, type-coercion, and try/catch returning structured 500s.
-- [ ] Update `src/main/resources/static/citizen.html` `sendData(...)` to use host-relative `/api/tickets/submit`, explicit JSON headers, and try/catch/finally with guaranteed button unlock.
-- [ ] Build/test: `mvn test` (or `mvn -q test`).
-- [ ] Runtime check on Render: submit from citizen portal and confirm button never freezes; verify JSON error body returned on failure.
+- [x] Update dashboard.html: add SLA timer inline element per incident card (claimed vs unclaimed states)
+- [x] Add CSS keyframes `flashRed` and `.sla-breach` behavior
+- [x] Add JS `ticketTimestamps` dictionary + `data-start` attribute on timer DOM
+- [x] Add high-frequency (1000ms) interval loop to compute/format elapsed time and update UI
+- [x] Trigger `.sla-breach` when elapsed >= 180s for unclaimed incidents
+- [ ] Ensure existing endpoints/claim/resolve logic and analytics/queue behavior remain intact
+- [ ] Sanity check by running app + verifying timer updates offline and on Render
+
+
 

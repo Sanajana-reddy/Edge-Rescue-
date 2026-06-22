@@ -1,219 +1,172 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EDGE-RESCUE Command Center</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Field Responder Command Center</title>
     <style>
-        /* Offline command center styling (replaces Tailwind CDN) */
+        /* Global reset & premium typography */
         :root{
-            --bg:#0f172a;
-            --card:#1e293b;
-            --text:#f8fafc;
+            --canvas:#0b0f19; /* deep dark slate canvas */
+            --panel:#111827;  /* rich navy tint */
+            --panel-ink:#0f1724;
             --muted:#94a3b8;
-            --border:#475569;
-            --focus:#22d3ee;
-            --red:#ef4444;      /* CRITICAL */
-            --amber:#f59e0b;    /* MEDIUM */
-            --emerald:#10b981;  /* LOW */
-        }
-        *{box-sizing:border-box}
-        html,body{height:100%}
-        body{
-            margin:0;
-            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-            background:
-                radial-gradient(circle at top, rgba(34,211,238,0.18), transparent 38%),
-                var(--bg);
-            color:var(--text);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            --border:#1f2937; /* sharp inner borders */
+            --accent-cyan:#22d3ee;
+            --accent-emerald:#10b981;
+            --accent-amber:#f59e0b;
+            --accent-red:#ef4444;
+            --white:#ffffff;
         }
 
-        a{color:#67e8f9; text-decoration:none}
-        a:hover{color:#22d3ee}
+        *,*::before,*::after{box-sizing:border-box}
+        html,body{height:100%;margin:0;background:var(--canvas);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;color:var(--white)}
 
-        /* Responsive layout blocks */
-        .wrap{max-width:1280px; margin:0 auto; padding:22px}
+        /* Centered container matrix */
+        .container{max-width:1200px;margin:28px auto;padding:20px;display:flex;flex-direction:column;gap:20px}
 
-        header{display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; justify-content:space-between; margin-bottom:22px; border-bottom:1px solid rgba(148,163,184,0.18); padding-bottom:18px}
+        /* Header */
+        .header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .header-left{display:flex;align-items:center;gap:14px}
+        .title{font-size:1.6rem;font-weight:800;letter-spacing:-0.01em}
+        .subtitle{color:var(--muted);font-size:0.94rem}
+        .tactical-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.02);font-weight:700;color:var(--accent-emerald);box-shadow:0 6px 20px rgba(2,6,23,0.6)}
 
-        /* Metrics grid */
-        section[style]{ }
-        /* Fall back when Tailwind classes are missing: */
-        header + section{ }
+        /* Stats grid */
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem}
+        .stat-card{background:var(--panel);border:1px solid var(--border);padding:16px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+        .stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.14em;font-weight:800}
+        .stat-value{font-size:1.8rem;font-weight:900;margin-top:8px;color:var(--white)}
 
-        /* Form controls (inputs/selects) */
-        input,select{
-            height:44px;
-            width:100%;
-            border-radius:10px;
-            border:1px solid var(--border);
-            background: rgba(2,6,23,0.55);
-            padding:0 12px;
-            font-size:14px;
-            color:var(--text);
-            outline:none;
-            transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
-        }
-        input:focus,select:focus{
-            border-color: rgba(34,211,238,0.9);
-            box-shadow:0 0 0 4px rgba(34,211,238,0.14);
-            background: rgba(2,6,23,0.75);
-        }
+        /* Controls deck */
+        .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+        .control{display:flex;flex-direction:column;gap:6px}
+        .control label{font-size:0.75rem;color:var(--muted);font-weight:700}
+        input[type="text"],select{background:#1f2937;border:1px solid var(--border);padding:10px 12px;border-radius:8px;color:var(--white);font-weight:600}
+        input[type="text"]::placeholder{color:#94a3b8}
+        input[type="text"]:focus,select:focus{outline:none;box-shadow:0 0 0 4px rgba(34,211,238,0.08);border-color:var(--accent-cyan)}
 
-        /* Queue container */
-        #queueContainer{
-            display:grid;
-            gap:16px;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        }
+        /* Main incidents grid */
+        #queueContainer{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.5rem}
 
-        /* Incident cards */
-        article{
-            border-radius:12px;
-            border:1px solid rgba(148,163,184,0.22);
-            padding:18px;
-            background: rgba(15,23,42,0.72);
-            box-shadow:0 18px 45px rgba(0,0,0,0.25);
-            position:relative;
-        }
+        article{background:var(--panel);border-radius:12px;border:1px solid var(--border);padding:18px;display:flex;flex-direction:column;gap:12px;transition:transform .18s ease,box-shadow .18s ease}
+        article:hover{transform:translateY(-6px);box-shadow:0 30px 60px rgba(2,6,23,0.7)}
 
-        /* Priority border-top accent must exist even without Tailwind */
-        /* These classes are already used by JS templates: border-red-400/50 etc */
-        .border-red-400\/50{border-top:4px solid var(--red) !important}
-        .border-cyan-400\/35{border-top:4px solid var(--focus) !important}
-        .border-emerald-400\/35{border-top:4px solid var(--emerald) !important}
-        .border-yellow-300\/60{border-top:4px solid var(--amber) !important}
+        /* Priority top-edge accent classes (kept for JS compatibility) */
+        .border-red-400\/50{border-top:4px solid var(--accent-red) !important}
+        .border-cyan-400\/35{border-top:4px solid var(--accent-cyan) !important}
+        .border-emerald-400\/35{border-top:4px solid var(--accent-emerald) !important}
+        .border-yellow-300\/60{border-top:4px solid var(--accent-amber) !important}
+
+        .badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-weight:800;font-size:0.72rem}
+        .priority-pill{font-weight:900}
+
+        h2{margin:0;font-size:1.05rem}
+        p{margin:0}
+
+        .meta-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 
         /* Buttons */
-        button{
-            transition: background .15s ease, filter .15s ease, box-shadow .15s ease, border-color .15s ease, opacity .15s ease;
-        }
-        button:disabled{opacity:.6; cursor:not-allowed}
+        .actions{display:flex;gap:10px;align-items:center}
+        .btn{padding:10px 14px;border-radius:10px;border:0;font-weight:800;cursor:pointer;transition:transform .14s ease,box-shadow .14s ease}
+        .btn-accept{background:var(--accent-emerald);color:#052e16}
+        .btn-accept:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(16,185,129,0.14)}
+        .btn-resolve{background:transparent;border:1px solid var(--border);color:var(--white)}
+        .btn-resolve:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(2,6,23,0.25)}
 
-        .btn-accept{
-            background: rgba(16,185,129,0.95);
-            color:#052e16;
-            border:1px solid rgba(16,185,129,0.2);
-            border-radius:10px;
-            padding:10px 14px;
-            font-weight:900;
-        }
-        .btn-accept:hover{filter:brightness(1.05)}
+        /* Footer grid inside card */
+        .card-footer{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;border-top:1px solid rgba(255,255,255,0.03);padding-top:12px;font-size:0.9rem;color:var(--muted)}
 
-        .btn-resolve{
-            background: rgba(15,23,42,0.55);
-            color: var(--text);
-            border:1px solid rgba(71,85,105,0.9);
-            border-radius:10px;
-            padding:10px 14px;
-            font-weight:800;
-        }
-        .btn-resolve:hover{background:rgba(30,41,59,0.9)}
+        /* SLA timer */
+        .sla-timer{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);font-weight:800;color:var(--muted)}
+        .sla-timer.muted{opacity:0.85;color:#cbd5e1}
+        @keyframes sla-pulse{0%,100%{box-shadow:0 0 8px rgba(239,68,68,0.18);border-color:rgba(239,68,68,0.45)}50%{box-shadow:0 0 20px rgba(239,68,68,0.35);border-color:rgba(239,68,68,0.6)}}
+        .sla-breach{animation:sla-pulse 1.2s ease-in-out infinite;color:var(--accent-red)}
 
-        /* Provide sensible styling for existing Tailwind-ish card/pill spans */
-        span[style]{ }
-        .badge-circle{display:inline-block; border-radius:999px; padding:6px 12px; font-size:12px; font-weight:900; letter-spacing:.16em}
+        /* Utilities */
+        .muted{color:var(--muted)}
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+        /* Responsive spacing */
+        @media (max-width:640px){.container{padding:14px}.title{font-size:1.25rem}}
     </style>
-
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
-    <main class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.14),transparent_38%)]">
-        <section class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <header class="mb-6 flex flex-col gap-4 border-b border-slate-800 pb-6 lg:flex-row lg:items-end lg:justify-between">
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
                 <div>
-                    <a href="index.html" class="mb-4 inline-flex text-sm font-semibold text-cyan-300 hover:text-cyan-200">← Gateway</a>
-                    <h1 class="text-3xl font-black tracking-tight text-white sm:text-5xl">Field Responder Command Center</h1>
-                    <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
-                        Live multi-region triage queue with claim handling and critical alert monitoring.
-                    </p>
+                    <div class="title">Field Responder Command Center</div>
+                    <div class="subtitle">Live multi-region triage queue with claim handling and critical alert monitoring.</div>
                 </div>
-                <div class="flex items-center gap-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200">
-                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.9)]"></span>
-                    Autorefresh Active
-                </div>
-            </header>
+                <div class="tactical-badge">● Tactical • Live</div>
+            </div>
+            <div class="tactical-badge" style="background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--accent-cyan);">Autorefresh Active</div>
+        </header>
 
-            <section class="mb-5 grid gap-3 sm:grid-cols-3">
-                <div class="rounded-lg border border-red-400/30 bg-red-500/15 p-4">
-                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-red-200">Critical Threats</p>
-                    <p id="statCritical" class="mt-2 text-3xl font-black text-white">0</p>
-                </div>
-                <div class="rounded-lg border border-cyan-400/30 bg-cyan-500/15 p-4">
-                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">Active Records</p>
-                    <p id="statTotal" class="mt-2 text-3xl font-black text-white">0</p>
-                </div>
-                <div class="rounded-lg border border-violet-400/30 bg-violet-500/15 p-4">
-                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-violet-200">Medical Cases</p>
-                    <p id="statMedical" class="mt-2 text-3xl font-black text-white">0</p>
-                </div>
-            </section>
-
-            <section class="mb-6 grid gap-3 rounded-lg border border-slate-800 bg-slate-900/80 p-4 shadow-2xl shadow-slate-950/30 lg:grid-cols-[1fr_180px_180px_180px]">
-                <label class="block">
-                    <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Search</span>
-                    <input
-                        id="searchBar"
-                        type="text"
-                        placeholder="Search keywords..."
-                        oninput="fetchLiveQueue()"
-                        class="h-11 w-full rounded-md border border-slate-700 bg-slate-950 px-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20"
-                    >
-                </label>
-                <label class="block">
-                    <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Filter Region</span>
-                    <select
-                        id="regionFilter"
-                        onchange="fetchLiveQueue()"
-                        class="h-11 w-full rounded-md border border-slate-700 bg-slate-950 px-3 text-sm font-semibold text-white outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20"
-                    >
-                        <option value="">All Regions</option>
-                        <option value="Bangalore">Bangalore</option>
-                        <option value="Kerala">Kerala</option>
-                        <option value="Global">Global</option>
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Priority</span>
-                    <select
-                        id="priorityFilter"
-                        onchange="fetchLiveQueue()"
-                        class="h-11 w-full rounded-md border border-slate-700 bg-slate-950 px-3 text-sm font-semibold text-white outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20"
-                    >
-                        <option value="">All Priorities</option>
-                        <option value="CRITICAL">Critical</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="LOW">Low</option>
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Category</span>
-                    <select
-                        id="categoryFilter"
-                        onchange="fetchLiveQueue()"
-                        class="h-11 w-full rounded-md border border-slate-700 bg-slate-950 px-3 text-sm font-semibold text-white outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20"
-                    >
-                        <option value="">All Categories</option>
-                        <option value="MEDICAL">Medical</option>
-                        <option value="FLOOD">Flood</option>
-                        <option value="RESCUE">Rescue</option>
-                        <option value="BLOCKAGE">Blockage</option>
-                        <option value="OTHER">Other</option>
-                    </select>
-                </label>
-            </section>
-
-            <section id="queueContainer" class="grid gap-4">
-                <p class="rounded-lg border border-slate-800 bg-slate-900/70 p-6 text-center text-slate-400">Waiting for real-time distress signals...</p>
-            </section>
+        <section class="stats-grid" aria-hidden="false">
+            <div class="stat-card">
+                <div class="stat-label">Critical Threats</div>
+                <div id="statCritical" class="stat-value">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Records</div>
+                <div id="statTotal" class="stat-value">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Medical Cases</div>
+                <div id="statMedical" class="stat-value">0</div>
+            </div>
         </section>
-    </main>
+
+        <section class="controls">
+            <div class="control">
+                <label for="searchBar">Search</label>
+                <input id="searchBar" type="text" placeholder="Search keywords..." oninput="fetchLiveQueue()" />
+            </div>
+            <div class="control">
+                <label for="regionFilter">Filter Region</label>
+                <select id="regionFilter" onchange="fetchLiveQueue()">
+                    <option value="">All Regions</option>
+                    <option value="Bangalore">Bangalore</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Global">Global</option>
+                </select>
+            </div>
+            <div class="control">
+                <label for="priorityFilter">Priority</label>
+                <select id="priorityFilter" onchange="fetchLiveQueue()">
+                    <option value="">All Priorities</option>
+                    <option value="CRITICAL">Critical</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                </select>
+            </div>
+            <div class="control">
+                <label for="categoryFilter">Category</label>
+                <select id="categoryFilter" onchange="fetchLiveQueue()">
+                    <option value="">All Categories</option>
+                    <option value="MEDICAL">Medical</option>
+                    <option value="FLOOD">Flood</option>
+                    <option value="RESCUE">Rescue</option>
+                    <option value="BLOCKAGE">Blockage</option>
+                    <option value="OTHER">Other</option>
+                </select>
+            </div>
+        </section>
+
+        <main>
+            <section id="queueContainer">
+                <p class="stat-card" style="text-align:center;color:var(--muted);">Waiting for real-time distress signals...</p>
+            </section>
+        </main>
+    </div>
 
     <script>
         const API_BASE = 'http://localhost:8082';
         const knownOpenCriticalTicketIds = new Set();
         let alarmAudioContext = null;
+        const ticketTimestamps = {};
 
         async function fetchLiveQueue() {
             const search = document.getElementById('searchBar').value.trim();
@@ -243,27 +196,45 @@
             } catch (error) {
                 console.error('Failed fetching live emergency queue matrix.', error);
                 document.getElementById('queueContainer').innerHTML = `
-                    <p class="rounded-lg border border-red-400/30 bg-red-500/10 p-6 text-center text-red-100">
-                        Live queue is unavailable. Check that the Spring Boot API is running on port 8082.
-                    </p>
+                    <p class="stat-card" style="background:rgba(255,0,0,0.04);border-color:rgba(255,0,0,0.06);">Live queue is unavailable. Check that the Spring Boot API is running on port 8082.</p>
                 `;
             }
         }
 
         function renderTickets(tickets) {
             const container = document.getElementById('queueContainer');
+            const incomingTicketIds = new Set(tickets.map(t => String(t.id)));
+            const existingCards = document.querySelectorAll('article[data-ticket-id]');
+            const existingTicketIds = new Set(Array.from(existingCards).map(card => card.getAttribute('data-ticket-id')));
 
-            if (!tickets.length) {
-                container.innerHTML = `
-                    <p class="rounded-lg border border-slate-800 bg-slate-900/70 p-6 text-center text-slate-400">
-                        No matching emergency tickets found in the selected region.
-                    </p>
-                `;
+            // Remove cards that no longer exist
+            existingTicketIds.forEach(ticketId => {
+                if (!incomingTicketIds.has(ticketId)) {
+                    const card = container.querySelector(`article[data-ticket-id="${escapeAttr(ticketId)}"]`);
+                    if (card) {
+                        card.remove();
+                        delete ticketTimestamps[ticketId];
+                    }
+                }
+            });
+
+            // Show empty state if none
+            if (tickets.length === 0) {
+                if (existingCards.length === 0) {
+                    container.innerHTML = `
+                        <p class="stat-card" style="text-align:center;color:var(--muted);">No matching emergency tickets found in the selected region.</p>
+                    `;
+                }
                 return;
             }
 
-            container.innerHTML = tickets.map(ticket => {
+            if (existingCards.length === 0 && container.children.length > 0 && container.children[0].tagName !== 'ARTICLE') {
+                container.innerHTML = '';
+            }
+
+            tickets.forEach(ticket => {
                 const id = safeText(ticket.id);
+                const ticketIdStr = String(id);
                 const priority = safeText(ticket.priority, 'MEDIUM').toUpperCase();
                 const category = safeText(ticket.category, 'OTHER').toUpperCase();
                 const status = safeText(ticket.status, 'OPEN').toUpperCase();
@@ -280,50 +251,98 @@
                     ? 'border-yellow-300/60 bg-yellow-500/10'
                     : `${priorityTone.border} bg-slate-900/85`;
 
-                return `
-                    <article class="rounded-lg border ${cardTone} p-5 shadow-xl shadow-slate-950/25">
-                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                            <div class="min-w-0">
-                                <div class="mb-3 flex flex-wrap items-center gap-2">
-                                    <span class="rounded-full ${priorityTone.badge} px-3 py-1 text-xs font-black tracking-[0.16em]">${priority}</span>
-                                    <span class="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs font-bold text-slate-300">${category}</span>
-                                    <span class="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">${region}</span>
-                                </div>
-                                <h2 class="text-xl font-black text-white">${category} Emergency Resource Request</h2>
-                                <p class="mt-3 text-sm leading-6 text-slate-200"><strong class="text-white">AI Triage Verdict:</strong> ${summary}</p>
-                                <p class="mt-2 text-sm leading-6 text-slate-400"><strong class="text-slate-200">Raw SOS Message:</strong> "${rawMessage}"</p>
-                            </div>
-                            <div class="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
-                                ${status === 'OPEN' ? `
-                                    <button
-                                        type="button"
-                                        onclick="claimTicket('${escapeJs(id)}')"
-                                        class="h-11 rounded-md bg-emerald-400 px-4 text-sm font-black text-slate-950 transition hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                    >
-                                        Accept Incident
-                                    </button>
-                                ` : ''}
-                                <button
-                                    type="button"
-                                    onclick="resolveTicket('${escapeJs(id)}')"
-                                    class="h-11 rounded-md border border-slate-700 px-4 text-sm font-bold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
-                                >
-                                    Mark Resolved
-                                </button>
-                            </div>
-                        </div>
+                const existingCard = container.querySelector(`article[data-ticket-id="${escapeAttr(ticketIdStr)}"]`);
 
-                        <div class="mt-5 grid gap-3 border-t border-slate-800 pt-4 text-sm sm:grid-cols-3">
-                            <p class="text-slate-400"><span class="block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Coordinates</span>${latitude}, ${longitude}</p>
-                            <p class="text-slate-400"><span class="block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Created</span>${safeText(createdAt)}</p>
-                            <p class="${isClaimed ? 'font-bold text-yellow-200' : 'text-emerald-200'}">
-                                <span class="block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</span>
-                                ${isClaimed ? `⚠️ Status: CLAIMED by ${workerName}` : `Status: ${status}`}
-                            </p>
-                        </div>
-                    </article>
+                if (existingCard) {
+                    updateExistingCard(existingCard, {
+                        priority,
+                        category,
+                        status,
+                        isClaimed,
+                        workerName,
+                        region,
+                        summary,
+                        rawMessage,
+                        latitude,
+                        longitude,
+                        createdAt,
+                        priorityTone,
+                        cardTone,
+                        id:ticketIdStr
+                    });
+                } else {
+                    const ticketStartEpoch = Date.now();
+                    ticketTimestamps[ticketIdStr] = ticketStartEpoch;
+
+                    const slaTimerHtml = isClaimed
+                        ? `<span class="sla-timer muted" aria-label="SLA timer"><span aria-hidden="true">⏱️</span> Handled</span>`
+                        : `<span class="sla-timer" data-ticket-id="${escapeHtml(id)}" data-start="${ticketStartEpoch}" aria-label="SLA timer"><span aria-hidden="true">⏱️</span> Waiting: 0s</span>`;
+
+                    const newCardHtml = `
+                        <article class="rounded-lg border ${cardTone} p-5 shadow-xl shadow-slate-950/25" data-ticket-id="${escapeHtml(ticketIdStr)}">
+                            <div style="display:flex;justify-content:space-between;gap:12px;align-items:start;">
+                                <div style="flex:1;min-width:0">
+                                    <div class="meta-row" style="margin-bottom:8px">
+                                        <span class="badge priority-pill ${priorityTone.badge}">${priority}</span>
+                                        <span class="badge" style="border:1px solid rgba(255,255,255,0.04);background:transparent">${category}</span>
+                                        <span class="badge" style="border:1px solid rgba(255,255,255,0.04);background:transparent">${region}</span>
+                                    </div>
+                                    <h2>${category} Emergency Resource Request</h2>
+                                    <p style="margin-top:8px;color:var(--muted);"><strong style="color:var(--white)">AI Triage Verdict:</strong> ${summary}</p>
+                                    <p style="margin-top:6px;color:var(--muted);"><strong style="color:var(--white)">Raw SOS Message:</strong> "${rawMessage}"</p>
+                                    <div style="margin-top:12px">${slaTimerHtml}</div>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+                                    <div class="actions">
+                                        ${status === 'OPEN' ? `
+                                            <button type="button" onclick="claimTicket('${escapeJs(id)}')" class="btn btn-accept">Accept Incident</button>
+                                        ` : ''}
+                                        <button type="button" onclick="resolveTicket('${escapeJs(id)}')" class="btn btn-resolve">Mark Resolved</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div><span style="display:block;font-size:0.68rem;color:var(--muted);font-weight:800">Coordinates</span>${latitude}, ${longitude}</div>
+                                <div><span style="display:block;font-size:0.68rem;color:var(--muted);font-weight:800">Created</span>${safeText(createdAt)}</div>
+                                <div class="${isClaimed ? 'font-bold text-yellow-200' : ''}"><span style="display:block;font-size:0.68rem;color:var(--muted);font-weight:800">Status</span>${isClaimed ? `⚠️ Status: CLAIMED by ${workerName}` : `Status: ${status}`}</div>
+                            </div>
+                        </article>
+                    `;
+                    container.insertAdjacentHTML('beforeend', newCardHtml);
+                }
+            });
+        }
+
+        function updateExistingCard(card, data){
+            const { priority, category, status, isClaimed, workerName, region, summary, rawMessage, latitude, longitude, createdAt, priorityTone } = data;
+            // Update badges
+            const metaRow = card.querySelector('.meta-row');
+            if (metaRow) {
+                metaRow.innerHTML = `
+                    <span class="badge priority-pill ${priorityTone.badge}">${priority}</span>
+                    <span class="badge" style="border:1px solid rgba(255,255,255,0.04);background:transparent">${category}</span>
+                    <span class="badge" style="border:1px solid rgba(255,255,255,0.04);background:transparent">${region}</span>
                 `;
-            }).join('');
+            }
+
+            const title = card.querySelector('h2'); if (title) title.textContent = `${category} Emergency Resource Request`;
+            const triage = card.querySelector('p'); if (triage) triage.innerHTML = `<strong style="color:var(--white)">AI Triage Verdict:</strong> ${summary}`;
+            const rawP = card.querySelectorAll('p')[1]; if (rawP) rawP.innerHTML = `<strong style="color:var(--white)">Raw SOS Message:</strong> "${rawMessage}"`;
+
+            const footer = card.querySelector('.card-footer');
+            if (footer) {
+                const parts = footer.querySelectorAll('div');
+                if (parts[0]) parts[0].innerHTML = `<span style="display:block;font-size:0.68rem;color:var(--muted);font-weight:800">Coordinates</span>${latitude}, ${longitude}`;
+                if (parts[1]) parts[1].innerHTML = `<span style="display:block;font-size:0.68rem;color:var(--muted);font-weight:800">Created</span>${safeText(createdAt)}`;
+                if (parts[2]) parts[2].innerHTML = `<span style="display:block;font-size:0.68rem;color:var(--muted);font-weight:800">Status</span>${isClaimed ? `⚠️ Status: CLAIMED by ${workerName}` : `Status: ${status}`}`;
+            }
+
+            // Update action buttons
+            const actions = card.querySelector('.actions');
+            if (actions) {
+                actions.innerHTML = `${status === 'OPEN' ? `<button type="button" onclick="claimTicket('${escapeJs(data.id)}')" class="btn btn-accept">Accept Incident</button>` : ''}` +
+                    `<button type="button" onclick="resolveTicket('${escapeJs(data.id)}')" class="btn btn-resolve">Mark Resolved</button>`;
+            }
         }
 
         async function claimTicket(id) {
@@ -333,14 +352,8 @@
             }
 
             try {
-                const response = await fetch(`/api/tickets/${encodeURIComponent(id)}/claim?workerName=${encodeURIComponent(workerName.trim())}`, {
-                    method: 'POST'
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API returned ${response.status}`);
-                }
-
+                const response = await fetch(`/api/tickets/${encodeURIComponent(id)}/claim?workerName=${encodeURIComponent(workerName.trim())}`, { method: 'POST' });
+                if (!response.ok) throw new Error(`API returned ${response.status}`);
                 await fetchLiveQueue();
                 await updateAnalyticsCounters();
             } catch (error) {
@@ -352,10 +365,7 @@
         async function resolveTicket(id) {
             try {
                 const response = await fetch(`${API_BASE}/api/tickets/${encodeURIComponent(id)}/resolve`, { method: 'DELETE' });
-                if (!response.ok) {
-                    throw new Error(`API returned ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`API returned ${response.status}`);
                 await fetchLiveQueue();
                 await updateAnalyticsCounters();
             } catch (error) {
@@ -367,10 +377,7 @@
         async function updateAnalyticsCounters() {
             try {
                 const response = await fetch(`/api/tickets/stats`);
-                if (!response.ok) {
-                    throw new Error(`API returned ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`API returned ${response.status}`);
                 const stats = await response.json();
                 document.getElementById('statCritical').innerText = safeNumber(stats.critical);
                 document.getElementById('statTotal').innerText = safeNumber(stats.totalActive);
@@ -382,138 +389,63 @@
 
         function trackCriticalOpenTickets(tickets) {
             tickets.forEach(ticket => {
-                if (!ticket || ticket.id === undefined || ticket.id === null) {
-                    return;
-                }
-
+                if (!ticket || ticket.id === undefined || ticket.id === null) return;
                 const id = String(ticket.id);
                 const priority = safeText(ticket.priority).toUpperCase();
                 const status = safeText(ticket.status, 'OPEN').toUpperCase();
-
-                if (!knownOpenCriticalTicketIds.has(id) && priority === 'CRITICAL' && status === 'OPEN') {
-                    playCriticalAlarm();
-                }
-
-                if (priority === 'CRITICAL' && status === 'OPEN') {
-                    knownOpenCriticalTicketIds.add(id);
-                }
+                if (!knownOpenCriticalTicketIds.has(id) && priority === 'CRITICAL' && status === 'OPEN') playCriticalAlarm();
+                if (priority === 'CRITICAL' && status === 'OPEN') knownOpenCriticalTicketIds.add(id);
             });
         }
 
-        function getAlarmAudioContext() {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContextClass) {
-                return null;
-            }
+        function getAlarmAudioContext() { const AudioContextClass = window.AudioContext || window.webkitAudioContext; if (!AudioContextClass) return null; if (!alarmAudioContext) alarmAudioContext = new AudioContextClass(); return alarmAudioContext; }
 
-            if (!alarmAudioContext) {
-                alarmAudioContext = new AudioContextClass();
-            }
+        function playCriticalAlarm() { const hasUserActivated = !navigator.userActivation || navigator.userActivation.hasBeenActive; if (!hasUserActivated) return; const audioContext = getAlarmAudioContext(); if (!audioContext) return; const scheduleAlarm = () => { const now = audioContext.currentTime; const masterGain = audioContext.createGain(); masterGain.gain.setValueAtTime(0.0001, now); masterGain.gain.exponentialRampToValueAtTime(0.2, now + 0.02); masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34); masterGain.connect(audioContext.destination); const highTone = audioContext.createOscillator(); highTone.type = 'sine'; highTone.frequency.setValueAtTime(920, now); highTone.frequency.exponentialRampToValueAtTime(460, now + 0.2); highTone.connect(masterGain); highTone.start(now); highTone.stop(now + 0.34); const lowTone = audioContext.createOscillator(); lowTone.type = 'triangle'; lowTone.frequency.setValueAtTime(680, now + 0.08); lowTone.frequency.exponentialRampToValueAtTime(340, now + 0.32); lowTone.connect(masterGain); lowTone.start(now + 0.08); lowTone.stop(now + 0.34); highTone.onended = () => masterGain.disconnect(); }; if (audioContext.state === 'suspended') { audioContext.resume().then(scheduleAlarm).catch(()=>{}); return;} scheduleAlarm(); }
 
-            return alarmAudioContext;
-        }
-
-        function playCriticalAlarm() {
-            const hasUserActivated = !navigator.userActivation || navigator.userActivation.hasBeenActive;
-            if (!hasUserActivated) {
-                return;
-            }
-
-            const audioContext = getAlarmAudioContext();
-            if (!audioContext) {
-                return;
-            }
-
-            const scheduleAlarm = () => {
-                const now = audioContext.currentTime;
-                const masterGain = audioContext.createGain();
-                masterGain.gain.setValueAtTime(0.0001, now);
-                masterGain.gain.exponentialRampToValueAtTime(0.2, now + 0.02);
-                masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
-                masterGain.connect(audioContext.destination);
-
-                const highTone = audioContext.createOscillator();
-                highTone.type = 'sine';
-                highTone.frequency.setValueAtTime(920, now);
-                highTone.frequency.exponentialRampToValueAtTime(460, now + 0.2);
-                highTone.connect(masterGain);
-                highTone.start(now);
-                highTone.stop(now + 0.34);
-
-                const lowTone = audioContext.createOscillator();
-                lowTone.type = 'triangle';
-                lowTone.frequency.setValueAtTime(680, now + 0.08);
-                lowTone.frequency.exponentialRampToValueAtTime(340, now + 0.32);
-                lowTone.connect(masterGain);
-                lowTone.start(now + 0.08);
-                lowTone.stop(now + 0.34);
-
-                highTone.onended = () => masterGain.disconnect();
-            };
-
-            if (audioContext.state === 'suspended') {
-                audioContext.resume().then(scheduleAlarm).catch(() => {});
-                return;
-            }
-
-            scheduleAlarm();
-        }
-
-        function getTicketRegion(ticket) {
-            return ticket && (ticket.region || ticket.assignedRegion || ticket.ticketRegion || ticket.zone || ticket.locationRegion);
-        }
-
-        function normalizeRegion(value) {
-            return String(value || '').trim().toLowerCase();
-        }
+        function getTicketRegion(ticket){ return ticket && (ticket.region || ticket.assignedRegion || ticket.ticketRegion || ticket.zone || ticket.locationRegion); }
+        function normalizeRegion(value){return String(value||'').trim().toLowerCase();}
 
         function getPriorityTone(priority) {
-            switch (priority) {
-                case 'CRITICAL':
-                    return { border: 'border-red-400/50', badge: 'bg-red-400 text-red-950' };
-                case 'LOW':
-                    return { border: 'border-emerald-400/35', badge: 'bg-emerald-300 text-emerald-950' };
-                default:
-                    return { border: 'border-cyan-400/35', badge: 'bg-cyan-300 text-cyan-950' };
+            switch (priority){
+                case 'CRITICAL': return { border: 'border-red-400/50', badge: 'bg-red-400 text-red-950' };
+                case 'LOW': return { border: 'border-emerald-400/35', badge: 'bg-emerald-300 text-emerald-950' };
+                default: return { border: 'border-cyan-400/35', badge: 'bg-cyan-300 text-cyan-950' };
             }
         }
 
-        function safeText(value, fallback = '') {
-            if (value === undefined || value === null) {
-                return fallback;
-            }
+        function safeText(value, fallback=''){ if (value===undefined||value===null) return fallback; const text=String(value).trim(); return text===''?fallback:escapeHtml(text); }
+        function safeNumber(value){ const number=Number(value); return Number.isFinite(number)?number:0; }
+        function safeCoordinate(value){ const number=Number(value); return Number.isFinite(number)?number.toFixed(6):'0.000000'; }
 
-            const text = String(value).trim();
-            return text === '' ? fallback : escapeHtml(text);
+        function escapeHtml(value){ return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        function escapeJs(value){ return String(value).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+        function escapeAttr(value){ return String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        function formatSlaElapsed(totalSeconds){ totalSeconds = Math.max(0, Math.floor(totalSeconds)); if (totalSeconds < 60) return `Waiting: ${totalSeconds}s`; const m = Math.floor(totalSeconds/60); const s = totalSeconds % 60; return `Waiting: ${m}m ${s}s`; }
+
+        function updateSlaTimers(){
+            const nowMs = Date.now();
+            const timers = document.querySelectorAll('.sla-timer[data-start]');
+            timers.forEach(timerEl => {
+                const startAttr = timerEl.getAttribute('data-start');
+                const ticketId = timerEl.getAttribute('data-ticket-id') || '';
+                const startMs = Number(startAttr);
+                if (!Number.isFinite(startMs)) return;
+                if (ticketId){ if (ticketTimestamps[ticketId] === undefined){ ticketTimestamps[ticketId] = startMs; } }
+                const effectiveStartMs = (ticketId && Number.isFinite(ticketTimestamps[ticketId])) ? ticketTimestamps[ticketId] : startMs;
+                const elapsedSeconds = (nowMs - effectiveStartMs) / 1000;
+                const formatted = formatSlaElapsed(elapsedSeconds);
+                timerEl.innerHTML = `<span aria-hidden="true">⏱️</span> ${formatted}`;
+                if (elapsedSeconds >= 180){ if (!timerEl.classList.contains('muted')){ timerEl.classList.add('sla-breach'); } } else { timerEl.classList.remove('sla-breach'); }
+            });
         }
 
-        function safeNumber(value) {
-            const number = Number(value);
-            return Number.isFinite(number) ? number : 0;
-        }
-
-        function safeCoordinate(value) {
-            const number = Number(value);
-            return Number.isFinite(number) ? number.toFixed(6) : '0.000000';
-        }
-
-        function escapeHtml(value) {
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        function escapeJs(value) {
-            return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        }
+        setInterval(updateSlaTimers,1000);
 
         updateAnalyticsCounters();
         fetchLiveQueue();
-        setInterval(updateAnalyticsCounters, 3000);
-        setInterval(fetchLiveQueue, 3000);
+        setInterval(updateAnalyticsCounters,3000);
+        setInterval(fetchLiveQueue,3000);
     </script>
 </body>
 </html>

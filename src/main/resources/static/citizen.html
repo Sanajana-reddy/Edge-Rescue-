@@ -1,166 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>EDGE-RESCUE Citizen Portal</title>
     <style>
-        /* Offline tactical styling (replaces Tailwind CDN) */
+        /* Premium dark UI — self-contained, Tailwind-inspired tokens */
         :root{
-            --bg:#0f172a;            /* body */
-            --card:#1e293b;          /* cards */
-            --text:#f8fafc;          /* primary */
-            --muted:#94a3b8;         /* secondary */
-            --border:#475569;       /* control border */
-            --focus:#22d3ee;        /* focus accent */
-            --red:#ef4444;          /* CRITICAL */
-            --amber:#f59e0b;        /* MEDIUM */
-            --emerald:#10b981;      /* LOW */
+            --canvas:#0b0f19;      /* midnight canvas */
+            --card:#1e293b;        /* slate card */
+            --card-border:#334155; /* elegant card border */
+            --muted:#94a3b8;       /* description / muted text */
+            --text:#ffffff;        /* primary text */
+            --control:#475569;     /* input border */
+            --input-bg:#0f172a;    /* textarea bg */
+            --accent-cyan:rgba(34,211,238,0.9);
+            --danger:#ef4444;      /* transmit */
+            --danger-hover:#dc2626;
+            --success:#10b981;
+            --priority-panel-alpha:.10;
         }
-        *{box-sizing:border-box}
-        html,body{height:100%}
+
+        /* Base layout & typography */
+        html,body{height:100%;}
         body{
             margin:0;
-            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-            background:
-                radial-gradient(circle at top, rgba(239,68,68,0.18), transparent 38%),
-                radial-gradient(circle at bottom right, rgba(34,211,238,0.14), transparent 32%),
-                var(--bg);
+            min-height:100vh;
+            display:flex; /* Canvas Centering */
+            align-items:center;
+            justify-content:center;
+            background:var(--canvas);
             color:var(--text);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+            padding:2rem;
         }
 
-        a{color:#fecaca; text-decoration:none}
-        a:hover{color:#fca5a5}
+        a{color:var(--danger); text-decoration:none}
+        a:hover{text-decoration:underline}
 
-        /* Generic layout helpers (no Tailwind required) */
-        main{min-height:100vh}
-        .hidden{display:none}
+        /* Card container */
+        .card-wrap{width:100%; max-width:32rem;}
+        .card{
+            background:var(--card);
+            border:1px solid var(--card-border);
+            border-radius:0.75rem; /* 12px */
+            padding:2rem; /* 32px */
+            box-shadow: 0 6px 30px rgba(2,6,23,0.55);
+        }
 
-        section{border-radius:12px}
+        .grid{display:grid; grid-template-columns:1fr; gap:1rem}
+        @media(min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
 
-        /* Form controls */
-        textarea{
+        .kicker{
+            display:inline-block;
+            padding:6px 10px;
+            font-size:12px;
+            font-weight:800;
+            text-transform:uppercase;
+            letter-spacing:0.12em;
+            border-radius:999px;
+            color:var(--text);
+            background:rgba(239,68,68,0.08);
+            border:1px solid rgba(239,68,68,0.12);
+        }
+
+        h1{margin:0 0 0.5rem 0; font-size:1.75rem; line-height:1; font-weight:900; color:#ffffff}
+        p.lead{margin:0; color:var(--muted); font-size:0.95rem; line-height:1.5}
+
+        /* Textarea styling per spec */
+        label{display:block; margin-bottom:0.5rem; font-weight:800; color:var(--muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.12em}
+        textarea#sosMessage{
             width:100%;
-            resize:none;
-            background: rgba(2,6,23,0.55);
-            border:1px solid var(--border);
+            min-height:10.5rem; /* ~9 rows */
+            background:var(--input-bg);
+            color:var(--text);
+            border:1px solid var(--control);
             border-radius:10px;
             padding:14px;
-            color:var(--text);
-            font-size:16px;
-            line-height:1.4;
+            font-size:15px;
+            line-height:1.5;
+            resize:none;
+            transition:box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+        }
+        textarea#sosMessage::placeholder{color:rgba(148,163,184,0.6)}
+        textarea#sosMessage:focus{
+            border-color:var(--danger);
+            box-shadow:0 0 0 6px rgba(239,68,68,0.08);
             outline:none;
-            transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
-        }
-        textarea::placeholder{color:rgba(148,163,184,0.72)}
-        textarea:focus{
-            border-color: rgba(34,211,238,0.9);
-            box-shadow:0 0 0 4px rgba(34,211,238,0.14);
-            background: rgba(2,6,23,0.7);
+            transform:translateY(-1px);
+            background:linear-gradient(180deg, rgba(7,11,20,0.6), rgba(2,6,23,0.6));
         }
 
-        /* Ensure the existing button (still has Tailwind class names) looks right offline */
-        button{
-            transition: background .15s ease, filter .15s ease, box-shadow .15s ease, opacity .15s ease;
-        }
-        button:disabled{opacity:.6; cursor:not-allowed}
-
-        /* Status result card */
-        #statusResult{
+        /* Transmit button — bold crimson CTA */
+        button#submitButton{
+            display:inline-block;
+            width:100%;
+            margin-top:1rem;
+            padding:0.9rem 1rem;
+            background:var(--danger);
+            color:#ffffff;
+            font-weight:800;
+            border:none;
             border-radius:10px;
-            border:1px solid rgba(34,211,238,0.35);
-            background:rgba(34,211,238,0.10);
-            padding:20px;
+            cursor:pointer;
+            font-size:0.95rem;
+            letter-spacing:0.06em;
+            transition:transform .12s ease, background .12s ease, box-shadow .12s ease;
+            box-shadow: 0 8px 20px rgba(239,68,68,0.18);
         }
+        button#submitButton:hover{ background:var(--danger-hover); transform:translateY(-2px) scale(1.02) }
+        button#submitButton:active{ transform:translateY(0) scale(0.995) }
+        button#submitButton:disabled{ opacity:.6; cursor:not-allowed; transform:none; box-shadow:none }
 
-        /* Metric / typography fallbacks for elements styled by Tailwind classes */
-        dt{
-            font-weight:900;
-            text-transform:uppercase;
-            letter-spacing:0.14em;
-            color:rgba(148,163,184,0.92);
-            font-size:12px;
-        }
-        dd{margin:6px 0 0 0; color:#e5e7eb}
+        /* Geo status */
+        #geoStatus{margin-top:.6rem; color:var(--muted); font-size:0.9rem; min-height:1.1rem}
+
+        /* Result card — matched navy/slate theme */
+        #statusResult{ display:none; border-radius:10px; }
+        .result-panel{ border:1px solid rgba(99,115,129,0.14); background:rgba(15,23,42,0.6); padding:1rem }
+
+        /* Utility small classes used by JS when toggling classes (escaped where needed) */
+        .mt-5{ margin-top:1.25rem }
+        .rounded-lg{ border-radius:12px }
+        .border{ border-width:1px; border-style:solid }
+        .p-5{ padding:1.25rem }
+        .rounded-full{ border-radius:999px }
+        .px-3{ padding-left:.75rem; padding-right:.75rem }
+        .py-1{ padding-top:.25rem; padding-bottom:.25rem }
+        .text-xs{ font-size:.75rem }
+        .font-black{ font-weight:900 }
+
+        /* Priority tone classes (escaped slashes) */
+        .border-red-400\/50{ border-color: rgba(239,68,68,0.5) }
+        .bg-red-500\/10{ background-color: rgba(239,68,68,var(--priority-panel-alpha)) }
+        .bg-red-400{ background-color: #ef4444 }
+        .text-red-950{ color: var(--canvas) }
+
+        .border-emerald-400\/40{ border-color: rgba(16,185,129,0.4) }
+        .bg-emerald-500\/10{ background-color: rgba(16,185,129,var(--priority-panel-alpha)) }
+        .bg-emerald-300{ background-color: #6ee7b7 }
+        .text-emerald-950{ color: var(--canvas) }
+
+        .border-cyan-400\/40{ border-color: rgba(34,211,238,0.4) }
+        .bg-cyan-500\/10{ background-color: rgba(34,211,238,var(--priority-panel-alpha)) }
+        .bg-cyan-300{ background-color: #67e8f9 }
+        .text-cyan-950{ color: var(--canvas) }
+
+        /* small dl styling */
+        dl{ margin:0 }
+        dt{ font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; font-weight:800 }
+        dd{ margin-top:.35rem; color:#e6eef8; font-weight:700 }
+
     </style>
-
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
-    <main class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.17),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.13),transparent_32%)]">
-        <section class="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-4 py-8 sm:px-6">
-            <a href="index.html" class="mb-6 inline-flex w-fit text-sm font-semibold text-red-200 hover:text-red-100">← Gateway</a>
+<body>
+    <div class="card-wrap">
+        <a href="index.html" style="display:inline-block;margin-bottom:12px;color:rgba(255,255,255,0.85);opacity:0.9">← Gateway</a>
 
-            <div class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
-                <section class="flex flex-col justify-between rounded-lg border border-red-400/30 bg-red-500/10 p-6 shadow-2xl shadow-red-950/20">
-                    <div>
-                        <p class="mb-4 inline-flex rounded-full border border-red-300/30 bg-red-300/10 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-red-100">
-                            Citizen Portal
-                        </p>
-                        <h1 class="text-4xl font-black tracking-tight text-white sm:text-5xl">Emergency SOS</h1>
-                        <p class="mt-4 text-sm leading-6 text-red-50/80">
-                            Describe your location, condition, and immediate need. The browser will attach your hardware coordinates when permission is granted.
-                        </p>
-                    </div>
-                    <div class="mt-8 grid gap-3 text-sm text-slate-300">
-                        <p class="rounded-md border border-slate-800 bg-slate-950/70 p-3">GPS coordinates are sent as numeric latitude and longitude fields.</p>
-                        <p class="rounded-md border border-slate-800 bg-slate-950/70 p-3">If location access is unavailable, the SOS still transmits with fallback coordinates.</p>
-                    </div>
-                </section>
+        <div class="grid">
+            <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;gap:1rem">
+                <div>
+                    <span class="kicker">Citizen Portal</span>
+                    <h1 style="margin-top:1rem">Emergency SOS</h1>
+                    <p class="lead">Describe your location, condition, and immediate need. Your device will attach coordinates when permission is granted.</p>
+                </div>
 
-                <section class="rounded-lg border border-slate-800 bg-slate-900/90 p-5 shadow-2xl shadow-slate-950/40 sm:p-6">
-                    <label for="sosMessage" class="mb-3 block text-sm font-black uppercase tracking-[0.18em] text-slate-400">Raw SOS Message</label>
-                    <textarea
-                        id="sosMessage"
-                        rows="9"
-                        placeholder="Example: We are trapped on the 2nd floor due to severe flooding near MG Road. 3 elderly citizens need medical attention."
-                        class="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 p-4 text-base leading-7 text-white outline-none transition placeholder:text-slate-500 focus:border-red-300 focus:ring-2 focus:ring-red-300/20"
-                    ></textarea>
-
-                    <button
-                        id="submitButton"
-                        type="button"
-                        onclick="submitSOS()"
-                        class="mt-4 h-12 w-full rounded-md bg-red-400 px-5 text-sm font-black uppercase tracking-[0.14em] text-red-950 shadow-lg shadow-red-950/30 transition hover:bg-red-300 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        Transmit Emergency Signal
-                    </button>
-
-                    <p id="geoStatus" class="mt-3 min-h-6 text-sm text-slate-400"></p>
-
-                    <div id="statusResult" class="mt-5 hidden rounded-lg border border-cyan-400/35 bg-cyan-400/10 p-5">
-                        <div class="mb-4 flex items-center justify-between gap-3">
-                            <h2 class="text-xl font-black text-white">Signal Processed</h2>
-                            <span id="resPriorityBadge" class="rounded-full bg-cyan-300 px-3 py-1 text-xs font-black tracking-[0.16em] text-cyan-950">MEDIUM</span>
-                        </div>
-                        <dl class="grid gap-3 text-sm sm:grid-cols-2">
-                            <div>
-                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">Category</dt>
-                                <dd id="resCategory" class="mt-1 text-slate-100">OTHER</dd>
-                            </div>
-                            <div>
-                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">Region</dt>
-                                <dd id="resRegion" class="mt-1 text-slate-100">Global</dd>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">AI Extracted Summary</dt>
-                                <dd id="resSummary" class="mt-1 leading-6 text-slate-100">Emergency logged.</dd>
-                            </div>
-                            <div>
-                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">Latitude</dt>
-                                <dd id="resLatitude" class="mt-1 text-slate-100">0.000000</dd>
-                            </div>
-                            <div>
-                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">Longitude</dt>
-                                <dd id="resLongitude" class="mt-1 text-slate-100">0.000000</dd>
-                            </div>
-                        </dl>
-                    </div>
-                </section>
+                <div style="margin-top:1rem;display:grid;gap:.5rem">
+                    <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(51,65,85,0.12);padding:.6rem;border-radius:10px;color:var(--muted);font-size:.9rem">GPS coordinates are sent as numeric latitude and longitude fields.</div>
+                    <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(51,65,85,0.12);padding:.6rem;border-radius:10px;color:var(--muted);font-size:.9rem">If location access is unavailable, the SOS still transmits with fallback coordinates.</div>
+                </div>
             </div>
-        </section>
-    </main>
+
+            <div class="card">
+                <label for="sosMessage">Raw SOS Message</label>
+                <textarea id="sosMessage" rows="9" placeholder="Example: We are trapped on the 2nd floor due to severe flooding near MG Road. 3 elderly citizens need medical attention."></textarea>
+
+                <button id="submitButton" type="button" onclick="submitSOS()">Transmit Emergency Signal</button>
+
+                <p id="geoStatus"></p>
+
+                <div id="statusResult" class="result-panel" aria-hidden="true">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem">
+                        <h2 style="margin:0;font-size:1.05rem;font-weight:900;color:var(--text)">Signal Processed</h2>
+                        <span id="resPriorityBadge" class="rounded-full px-3 py-1 text-xs font-black" style="background:rgba(99,115,129,0.06);color:var(--text)">MEDIUM</span>
+                    </div>
+
+                    <dl style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+                        <div>
+                            <dt>Category</dt>
+                            <dd id="resCategory">OTHER</dd>
+                        </div>
+                        <div>
+                            <dt>Region</dt>
+                            <dd id="resRegion">Global</dd>
+                        </div>
+                        <div style="grid-column:1 / -1">
+                            <dt>AI Extracted Summary</dt>
+                            <dd id="resSummary">Emergency logged.</dd>
+                        </div>
+                        <div>
+                            <dt>Latitude</dt>
+                            <dd id="resLatitude">0.000000</dd>
+                        </div>
+                        <div>
+                            <dt>Longitude</dt>
+                            <dd id="resLongitude">0.000000</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const API_BASE = 'http://localhost:8082';
@@ -251,7 +303,6 @@
             }
         }
 
-
         function renderResult(ticket) {
             const priority = safeText(ticket.priority, 'MEDIUM').toUpperCase();
             const category = safeText(ticket.category, 'OTHER').toUpperCase();
@@ -259,12 +310,15 @@
             const region = safeText(ticket.region || ticket.assignedRegion || ticket.ticketRegion || ticket.zone, 'Global');
             const latitude = safeCoordinate(ticket.latitude);
             const longitude = safeCoordinate(ticket.longitude);
+
             const tone = getPriorityTone(priority);
             const result = document.getElementById('statusResult');
             const badge = document.getElementById('resPriorityBadge');
 
+            // Apply theme classes while keeping ids intact
+            result.style.display = 'block';
             result.className = `mt-5 rounded-lg border ${tone.border} ${tone.panel} p-5`;
-            badge.className = `rounded-full ${tone.badge} px-3 py-1 text-xs font-black tracking-[0.16em]`;
+            badge.className = `rounded-full ${tone.badge} px-3 py-1 text-xs font-black`;
             badge.innerText = priority;
 
             document.getElementById('resCategory').innerText = category;
