@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDGE-RESCUE Citizen Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
+    <main class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.17),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.13),transparent_32%)]">
+        <section class="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-4 py-8 sm:px-6">
+            <a href="index.html" class="mb-6 inline-flex w-fit text-sm font-semibold text-red-200 hover:text-red-100">← Gateway</a>
+
+            <div class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
+                <section class="flex flex-col justify-between rounded-lg border border-red-400/30 bg-red-500/10 p-6 shadow-2xl shadow-red-950/20">
+                    <div>
+                        <p class="mb-4 inline-flex rounded-full border border-red-300/30 bg-red-300/10 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-red-100">
+                            Citizen Portal
+                        </p>
+                        <h1 class="text-4xl font-black tracking-tight text-white sm:text-5xl">Emergency SOS</h1>
+                        <p class="mt-4 text-sm leading-6 text-red-50/80">
+                            Describe your location, condition, and immediate need. The browser will attach your hardware coordinates when permission is granted.
+                        </p>
+                    </div>
+                    <div class="mt-8 grid gap-3 text-sm text-slate-300">
+                        <p class="rounded-md border border-slate-800 bg-slate-950/70 p-3">GPS coordinates are sent as numeric latitude and longitude fields.</p>
+                        <p class="rounded-md border border-slate-800 bg-slate-950/70 p-3">If location access is unavailable, the SOS still transmits with fallback coordinates.</p>
+                    </div>
+                </section>
+
+                <section class="rounded-lg border border-slate-800 bg-slate-900/90 p-5 shadow-2xl shadow-slate-950/40 sm:p-6">
+                    <label for="sosMessage" class="mb-3 block text-sm font-black uppercase tracking-[0.18em] text-slate-400">Raw SOS Message</label>
+                    <textarea
+                        id="sosMessage"
+                        rows="9"
+                        placeholder="Example: We are trapped on the 2nd floor due to severe flooding near MG Road. 3 elderly citizens need medical attention."
+                        class="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 p-4 text-base leading-7 text-white outline-none transition placeholder:text-slate-500 focus:border-red-300 focus:ring-2 focus:ring-red-300/20"
+                    ></textarea>
+
+                    <button
+                        id="submitButton"
+                        type="button"
+                        onclick="submitSOS()"
+                        class="mt-4 h-12 w-full rounded-md bg-red-400 px-5 text-sm font-black uppercase tracking-[0.14em] text-red-950 shadow-lg shadow-red-950/30 transition hover:bg-red-300 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        Transmit Emergency Signal
+                    </button>
+
+                    <p id="geoStatus" class="mt-3 min-h-6 text-sm text-slate-400"></p>
+
+                    <div id="statusResult" class="mt-5 hidden rounded-lg border border-cyan-400/35 bg-cyan-400/10 p-5">
+                        <div class="mb-4 flex items-center justify-between gap-3">
+                            <h2 class="text-xl font-black text-white">Signal Processed</h2>
+                            <span id="resPriorityBadge" class="rounded-full bg-cyan-300 px-3 py-1 text-xs font-black tracking-[0.16em] text-cyan-950">MEDIUM</span>
+                        </div>
+                        <dl class="grid gap-3 text-sm sm:grid-cols-2">
+                            <div>
+                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">Category</dt>
+                                <dd id="resCategory" class="mt-1 text-slate-100">OTHER</dd>
+                            </div>
+                            <div>
+                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">Region</dt>
+                                <dd id="resRegion" class="mt-1 text-slate-100">Global</dd>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">AI Extracted Summary</dt>
+                                <dd id="resSummary" class="mt-1 leading-6 text-slate-100">Emergency logged.</dd>
+                            </div>
+                            <div>
+                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">Latitude</dt>
+                                <dd id="resLatitude" class="mt-1 text-slate-100">0.000000</dd>
+                            </div>
+                            <div>
+                                <dt class="font-bold uppercase tracking-[0.14em] text-slate-500">Longitude</dt>
+                                <dd id="resLongitude" class="mt-1 text-slate-100">0.000000</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_BASE = 'http://localhost:8082';
+
+        function submitSOS() {
+            const message = document.getElementById('sosMessage').value.trim();
+            const button = document.getElementById('submitButton');
+            const geoStatus = document.getElementById('geoStatus');
+
+            if (!message) {
+                alert('Please enter a valid SOS message.');
+                return;
+            }
+
+            button.innerText = 'Capturing Coordinates...';
+            button.disabled = true;
+            geoStatus.innerText = 'Requesting browser location permission.';
+
+            if (!navigator.geolocation) {
+                geoStatus.innerText = 'Geolocation is unavailable. Transmitting with fallback coordinates.';
+                sendData(message, 0.0, 0.0, button);
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const latitude = Number(position.coords.latitude);
+                    const longitude = Number(position.coords.longitude);
+                    geoStatus.innerText = `Coordinates captured: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+                    sendData(message, latitude, longitude, button);
+                },
+                error => {
+                    console.warn('Geolocation unavailable.', error);
+                    geoStatus.innerText = 'Location permission unavailable. Transmitting with fallback coordinates.';
+                    sendData(message, 0.0, 0.0, button);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 30000
+                }
+            );
+        }
+
+        async function sendData(message, latitude, longitude, button) {
+            try {
+                button.innerText = 'Transmitting SOS...';
+
+                const response = await fetch(`${API_BASE}/api/tickets/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message,
+                        latitude,
+                        longitude
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}`);
+                }
+
+                const ticket = await response.json();
+                renderResult(ticket);
+                document.getElementById('sosMessage').value = '';
+            } catch (error) {
+                console.error('Transmission failed.', error);
+                alert('Transmission failed. Please confirm the rescue API is running on port 8082.');
+            } finally {
+                button.innerText = 'Transmit Emergency Signal';
+                button.disabled = false;
+            }
+        }
+
+        function renderResult(ticket) {
+            const priority = safeText(ticket.priority, 'MEDIUM').toUpperCase();
+            const category = safeText(ticket.category, 'OTHER').toUpperCase();
+            const summary = safeText(ticket.summary, 'Emergency logged.');
+            const region = safeText(ticket.region || ticket.assignedRegion || ticket.ticketRegion || ticket.zone, 'Global');
+            const latitude = safeCoordinate(ticket.latitude);
+            const longitude = safeCoordinate(ticket.longitude);
+            const tone = getPriorityTone(priority);
+            const result = document.getElementById('statusResult');
+            const badge = document.getElementById('resPriorityBadge');
+
+            result.className = `mt-5 rounded-lg border ${tone.border} ${tone.panel} p-5`;
+            badge.className = `rounded-full ${tone.badge} px-3 py-1 text-xs font-black tracking-[0.16em]`;
+            badge.innerText = priority;
+
+            document.getElementById('resCategory').innerText = category;
+            document.getElementById('resRegion').innerText = region;
+            document.getElementById('resSummary').innerText = summary;
+            document.getElementById('resLatitude').innerText = latitude;
+            document.getElementById('resLongitude').innerText = longitude;
+        }
+
+        function getPriorityTone(priority) {
+            switch (priority) {
+                case 'CRITICAL':
+                    return { border: 'border-red-400/50', panel: 'bg-red-500/10', badge: 'bg-red-400 text-red-950' };
+                case 'LOW':
+                    return { border: 'border-emerald-400/40', panel: 'bg-emerald-500/10', badge: 'bg-emerald-300 text-emerald-950' };
+                default:
+                    return { border: 'border-cyan-400/40', panel: 'bg-cyan-500/10', badge: 'bg-cyan-300 text-cyan-950' };
+            }
+        }
+
+        function safeText(value, fallback = '') {
+            if (value === undefined || value === null) {
+                return fallback;
+            }
+
+            const text = String(value).trim();
+            return text === '' ? fallback : text;
+        }
+
+        function safeCoordinate(value) {
+            const number = Number(value);
+            return Number.isFinite(number) ? number.toFixed(6) : '0.000000';
+        }
+    </script>
+</body>
+</html>
