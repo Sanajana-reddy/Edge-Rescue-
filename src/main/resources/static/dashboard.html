@@ -70,13 +70,16 @@
 
         #queueContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; width: 100%; }
 
-        .incident-card { display: flex; flex-direction: column; justify-content: space-between; background: #1e293b; border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; min-height: 340px; box-shadow: 0 16px 40px rgba(0,0,0,0.25); word-break: break-word; line-height: 1.5; }
+        .incident-card { display: flex; flex-direction: column; justify-content: space-between; background: #1e293b; border: 1px solid var(--border); border-top: 6px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; min-height: 340px; box-shadow: 0 16px 40px rgba(0,0,0,0.25); word-break: break-word; line-height: 1.5; overflow: hidden; }
+        .incident-card.critical { border-top: 6px solid #ef4444; background: linear-gradient(to bottom, rgba(239, 68, 68, 0.08), #1e293b); box-shadow: 0 18px 44px rgba(239,68,68,0.14), 0 16px 40px rgba(0,0,0,0.25); }
+        .incident-card.medium { border-top: 6px solid #f59e0b; background: linear-gradient(to bottom, rgba(245, 158, 11, 0.05), #1e293b); box-shadow: 0 18px 44px rgba(245,158,11,0.1), 0 16px 40px rgba(0,0,0,0.25); }
+        .incident-card.low { border-top: 6px solid #10b981; background: linear-gradient(to bottom, rgba(16, 185, 129, 0.03), #1e293b); box-shadow: 0 18px 44px rgba(16,185,129,0.08), 0 16px 40px rgba(0,0,0,0.25); }
         .incident-card .meta-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
         .incident-card h2 { margin: 0; font-size: 1.05rem; line-height: 1.35; }
         .incident-card p { margin: 0; color: var(--muted); }
         .incident-card p strong { color: var(--white); }
-        .incident-card .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 18px; }
-        .incident-card .actions .btn { min-width: 140px; }
+        .incident-card .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 18px; }
+        .incident-card .actions .btn { min-width: 140px; display: inline-flex; align-items: center; justify-content: center; }
         .incident-card .card-footer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; margin-top: 18px; font-size: 0.9rem; color: var(--muted); }
         .incident-card .card-footer div { word-break: break-word; }
 
@@ -93,7 +96,10 @@
         .mesh-connector { font-weight: 800; color: #94a3b8; }
         .mesh-metrics { display:flex; gap:8px; align-items:center; justify-content:space-between; color:#94a3b8; font-size:0.72rem; }
 
-        .badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; font-weight: 800; font-size: 0.72rem; }
+        .badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.02em; }
+        .badge.critical { background-color: #ef4444; color: #ffffff; font-weight: 800; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 0 18px rgba(239,68,68,0.24); }
+        .badge.medium { background-color: #f59e0b; color: #000000; font-weight: 800; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 0 18px rgba(245,158,11,0.18); }
+        .badge.low { background-color: #10b981; color: #ffffff; font-weight: 800; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 0 18px rgba(16,185,129,0.18); }
         .priority-pill { font-weight: 900; }
 
         .btn { padding: 10px 14px; border-radius: 10px; border: 0; font-weight: 800; cursor: pointer; transition: transform .14s ease, box-shadow .14s ease; text-decoration: none; text-align: center; }
@@ -101,13 +107,17 @@
         .btn-accept:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(16,185,129,0.14); }
         .btn-resolve { background: transparent; border: 1px solid rgba(255,255,255,0.08); color: var(--white); }
         .btn-resolve:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(2,6,23,0.25); }
-        .btn-map { background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.22); color: var(--accent-cyan); }
+        .btn-map { background: rgba(14,165,233,0.08); border: 1px solid rgba(34,211,238,0.28); color: #7dd3fc; }
+        .incident-card .actions .btn-map { min-width: 118px; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; letter-spacing: 0.02em; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02); }
         .btn-map:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(34,211,238,0.14); }
 
-        .sla-timer { display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent); font-weight: 800; color: var(--muted); }
+        .sla-timer { display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.24); background: #0f172a; font-weight: 800; color: #e2e8f0; }
         .sla-timer.muted { opacity: 0.85; color: #cbd5e1; }
-        @keyframes sla-pulse { 0%,100% { box-shadow: 0 0 8px rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.45); } 50% { box-shadow: 0 0 20px rgba(239,68,68,0.35); border-color: rgba(239,68,68,0.6); } }
-        .sla-breach { animation: sla-pulse 1.2s ease-in-out infinite; color: var(--accent-red); }
+        @keyframes sla-breach-flash {
+            0%, 100% { background-color: #0f172a; border-color: rgba(148,163,184,0.35); color: #ffffff; box-shadow: none; }
+            50% { background-color: #ef4444; border-color: #ef4444; color: #ffffff; box-shadow: 0 0 0 2px rgba(239,68,68,0.35), 0 0 28px rgba(239,68,68,0.65); }
+        }
+        .sla-timer.sla-breach { animation: sla-breach-flash 1s steps(1, end) infinite; color: #ffffff; font-weight: 900; }
 
         .muted { color: var(--muted); }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
@@ -148,8 +158,8 @@
                 <div id="statCritical" class="stat-value">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Active Records</div>
-                <div id="statTotal" class="stat-value">0</div>
+                <div class="stat-label">⚠️ SLA Breach Counter</div>
+                <div id="statSlaBreach" class="stat-value">0</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Medical Cases</div>
@@ -483,7 +493,7 @@
                 } else {
                     ticketTimestamps[ticketIdStr] = Date.now();
                     const newCardHtml = `
-                        <article class="incident-card rounded-lg border ${priorityTone.border} bg-slate-900/85" data-ticket-id="${escapeHtml(ticketIdStr)}">
+                        <article class="incident-card ${priorityTone.card}" data-ticket-id="${escapeHtml(ticketIdStr)}">
                             <div>
                                 <div class="meta-row">
                                     <span class="badge priority-pill ${priorityTone.badge}">${priority}</span>
@@ -526,6 +536,8 @@
 
         function updateExistingCard(card, data) {
             const { priority, category, status, isClaimed, workerName, region, summary, rawMessage, latitude, longitude, createdAt, priorityTone, id, slaTimerHtml, nearest, recommendation } = data;
+            card.classList.remove('critical', 'medium', 'low');
+            card.classList.add(priorityTone.card);
             const metaRow = card.querySelector('.meta-row');
             if (metaRow) {
                 metaRow.innerHTML = `
@@ -612,7 +624,6 @@
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 const stats = await response.json();
                 document.getElementById('statCritical').innerText = safeNumber(stats.critical);
-                document.getElementById('statTotal').innerText = safeNumber(stats.totalActive);
                 document.getElementById('statMedical').innerText = safeNumber(stats.medical);
             } catch (error) {
                 console.error('Analytics fetch offline.', error);
@@ -639,9 +650,9 @@
 
         function getPriorityTone(priority) {
             switch (priority){
-                case 'CRITICAL': return { border: 'border-red-400/50', badge: 'bg-red-400 text-red-950' };
-                case 'LOW': return { border: 'border-emerald-400/35', badge: 'bg-emerald-300 text-emerald-950' };
-                default: return { border: 'border-cyan-400/35', badge: 'bg-cyan-300 text-cyan-950' };
+                case 'CRITICAL': return { card: 'critical', badge: 'critical' };
+                case 'LOW': return { card: 'low', badge: 'low' };
+                default: return { card: 'medium', badge: 'medium' };
             }
         }
 
@@ -669,6 +680,12 @@
                 timerEl.innerHTML = `<span aria-hidden="true">⏱️</span> ${formatted}`;
                 if (elapsedSeconds >= 180){ if (!timerEl.classList.contains('muted')){ timerEl.classList.add('sla-breach'); } } else { timerEl.classList.remove('sla-breach'); }
             });
+            const slaBreachCount = document.querySelectorAll('.sla-timer.sla-breach').length;
+            const slaBreachStat = document.getElementById('statSlaBreach');
+            if (slaBreachStat) {
+                slaBreachStat.innerText = slaBreachCount;
+                slaBreachStat.style.color = slaBreachCount > 0 ? '#f59e0b' : 'var(--white)';
+            }
         }
 
         setInterval(updateSlaTimers,1000);
