@@ -6,10 +6,13 @@ import com.edgeRescue.demo.model.EmergencyTicket;
 import com.edgeRescue.demo.model.TriageResponse;
 import com.edgeRescue.demo.repository.TicketRepository;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -19,6 +22,7 @@ public class TicketController {
     private final TriageAiService aiService;
     private final TicketRepository ticketRepository;
     private final RoutingEngine routingEngine;
+
 
 
     public TicketController(TriageAiService aiService, TicketRepository ticketRepository, RoutingEngine routingEngine) {
@@ -33,24 +37,67 @@ public class TicketController {
      * structures it, persists it, and returns the result.
      */
     @PostMapping("/submit")
-    public EmergencyTicket submitTicket(@RequestBody Map<String, Object> payload) {
-        String rawMessage = (String) payload.get("message");
-        double lat = parseCoordinate(payload.get("latitude"));
-        double lon = parseCoordinate(payload.get("longitude"));
+    public ResponseEntity<?> submitTicket(@RequestBody Map<String, Object> payload) {
+        try {
+            // Safely extract message string
+            Object messageObj = payload == null ? null : payload.get("message");
+            String rawMessage = messageObj == null ? "" : messageObj.toString();
+            rawMessage = rawMessage == null ? "" : rawMessage.trim();
 
-        TriageResponse triage = aiService.parseEmergency(rawMessage);
-        EmergencyTicket newTicket = new EmergencyTicket(rawMessage, triage);
+            // Safely extract latitude/longitude as doubles (supports number or string)
+            double lat = 0.0;
+            double lon = 0.0;
+            try {
+                lat = parseCoordinate(payload == null ? null : payload.get("latitude"));
+                lon = parseCoordinate(payload == null ? null : payload.get("longitude"));
+            } catch (Exception ignored) {
+                lat = 0.0;
+                lon = 0.0;
+            }
 
-        newTicket.setLatitude(lat);
-        newTicket.setLongitude(lon);
+            // Validate message presence
+            if (rawMessage.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "BAD_REQUEST",
+                        "error", "Emergency message text cannot be blank",
+                        "message", "Please provide a non-empty 'message' field"
+                ));
+            }
 
-        // Determine region from coordinates first, then fallback to AI-parsed text
-        String region = resolveRegion(lat, triage);
-        newTicket.setRegion(region);
+            // Pass the message through AI parser
+            TriageResponse triage = aiService.parseEmergency(rawMessage);
 
-        ticketRepository.save(newTicket);
-        return newTicket;
+            // Manually instantiate and set EmergencyTicket fields
+            EmergencyTicket ticket = new EmergencyTicket(rawMessage, triage);
+            ticket.setLatitude(lat);
+            ticket.setLongitude(lon);
+            ticket.setStatus("OPEN");
+
+            // Apply structural region routing conditions (BANGALORE / KERALA / GLOBAL)
+            String region;
+            if (lat >= 12.0 && lat <= 14.0) {
+                region = "BANGALORE";
+            } else if (lat >= 8.0 && lat <= 11.5) {
+                region = "KERALA";
+            } else {
+                region = resolveRegion(lat, triage);
+            }
+            ticket.setRegion(region);
+
+            EmergencyTicket saved = ticketRepository.save(ticket);
+            return ResponseEntity.ok(saved);
+
+        } catch (Exception e) {
+            e.printStackTrace(); // log so Render logs capture it
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "status", "INTERNAL_ERROR",
+                            "error", "Internal Server Processing Failure",
+                            "message", e.getMessage() == null ? "Unexpected server error" : e.getMessage()
+                    ));
+        }
     }
+
 
     /**
      * Endpoint 2: Allows a field responder to claim a ticket, preventing resource conflicts.

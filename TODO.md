@@ -1,13 +1,7 @@
-# TODO - Cloud-safe triage fallback
+ # EdgeRescue Cloud Deployment Verification Tasks
 
-- [ ] Inspect current `TriageAiService.java` implementation.
-- [ ] Implement cloud-safe try-catch in `parseEmergency(String rawMessage)`:
-  - [ ] Keep existing local Ollama/LLM call in `try` block.
-  - [ ] On `catch (Exception e)`, run deterministic keyword rules engine fallback:
-    - [ ] Lowercase message.
-    - [ ] Detect FLOOD / MEDICAL / RESCUE keywords with specified priorities and categories.
-    - [ ] Default to LOW / OTHER with summary snippet prefixed with `[Cloud Engine]`.
-  - [ ] Return a clean `TriageResponse` from both paths.
-- [ ] Update imports if required.
-- [ ] Compile/test the project (`mvn test` or `mvn -q test`).
+- [ ] Update/confirm `POST /api/tickets/submit` in `TicketController.java` uses robust `Map<String, Object>` extraction, type-coercion, and try/catch returning structured 500s.
+- [ ] Update `src/main/resources/static/citizen.html` `sendData(...)` to use host-relative `/api/tickets/submit`, explicit JSON headers, and try/catch/finally with guaranteed button unlock.
+- [ ] Build/test: `mvn test` (or `mvn -q test`).
+- [ ] Runtime check on Render: submit from citizen portal and confirm button never freezes; verify JSON error body returned on failure.
 

@@ -139,18 +139,22 @@
             try {
                 button.innerText = 'Transmitting SOS...';
 
-                const response = await fetch(`/api/tickets/submit`, {
+                const response = await fetch('/api/tickets/submit', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     body: JSON.stringify({
                         message,
-                        latitude,
-                        longitude
+                        latitude: parseFloat(latitude) || 0.0,
+                        longitude: parseFloat(longitude) || 0.0
                     })
                 });
 
                 if (!response.ok) {
-                    throw new Error(`API returned ${response.status}`);
+                    const errorPayload = await response.json().catch(() => ({}));
+                    throw new Error(errorPayload.error || `HTTP ${response.status}`);
                 }
 
                 const ticket = await response.json();
@@ -158,12 +162,16 @@
                 document.getElementById('sosMessage').value = '';
             } catch (error) {
                 console.error('Transmission failed.', error);
-                alert('Transmission failed. Please confirm the rescue API is running on port 8082.');
+                alert(`Transmission failed: ${error.message || 'Unknown error'}`);
             } finally {
-                button.innerText = 'Transmit Emergency Signal';
-                button.disabled = false;
+                // CRITICAL: guarantee unlock under every condition
+                if (button) {
+                    button.innerText = "Transmit Emergency Signal";
+                    button.disabled = false;
+                }
             }
         }
+
 
         function renderResult(ticket) {
             const priority = safeText(ticket.priority, 'MEDIUM').toUpperCase();
