@@ -4,6 +4,123 @@
 
 ---
 
+## 🔗 Demo Links
+
+| Page | Link |
+| :--- | :--- |
+| Live Render Demo | https://edge-rescue.onrender.com |
+| Local Home Page | `http://localhost:8082/index.html` |
+| Local Citizen SOS Page | `http://localhost:8082/citizen.html` |
+| Local Command Dashboard | `http://localhost:8082/dashboard.html` |
+
+---
+
+## 🎯 Problem Statement
+
+During floods, landslides, earthquakes, medical emergencies, or network blackouts, normal emergency apps can fail because they depend on internet, cloud servers, and stable communication towers.
+
+Edge-Rescue solves this by running the emergency workflow on the local machine first. Citizens can send help signals, the system can read and sort emergency messages, and command teams can manage rescue tickets even when the internet is not available.
+
+---
+
+## ✅ How Edge-Rescue Solves It
+
+* **No internet available**: The app can still run on the local machine.
+* **Citizen still sends SOS**: A trapped person can send a message with location details.
+* **Local system reads and classifies it**: The offline AI reads the message, creates a summary, sets the category, and marks the priority.
+* **Command desk assigns rescue team**: Operators can filter, monitor, and claim incidents from the dashboard.
+* **Data can be exported offline**: The active emergency list can be downloaded and copied to a USB drive.
+
+---
+
+## 👥 User Roles
+
+| User | What They Can Do |
+| :--- | :--- |
+| Citizen | Send an emergency message and location coordinates. |
+| Command Operator | View, filter, monitor, claim, and export emergency tickets. |
+| Rescue Team | Accept an incident and respond to the assigned location. |
+
+---
+
+## 🔁 Application Flow
+
+```text
+Citizen SOS → Local Backend → AI Triage → Dashboard Queue → Rescue Team Claim → CSV Export
+```
+
+---
+
+## 🖼️ Screenshots
+
+
+### Home Page
+
+![Home Page](docs/screenshots/home-page.png)
+
+### Citizen SOS Page
+
+![Citizen SOS Page](docs/screenshots/citizen-sos-page.png)
+
+### Command Dashboard
+
+![Command Dashboard](docs/screenshots/command-dashboard.png)
+
+### Ticket Details and Mesh Path
+
+![Ticket Details and Mesh Path](docs/screenshots/ticket-details.png)
+
+### CSV Export
+
+![CSV Export](docs/screenshots/csv-export.png)
+
+---
+
+## 🧪 Offline Testing Steps
+
+Use this small judge-focused test script to prove the offline workflow:
+
+1. **Start Ollama**:
+
+   ```bash
+   ollama run llama3.2:1b
+   ```
+
+2. **Start Spring Boot**:
+
+   ```bash
+   .\mvnw.cmd clean spring-boot:run
+   ```
+
+   You can also run:
+
+   ```bash
+   mvn spring-boot:run
+   ```
+
+3. **Turn off Wi-Fi** on your computer.
+4. **Open the citizen page** at `http://localhost:8082/citizen.html`.
+5. **Submit an SOS** with a disaster message and location coordinates.
+6. **Open the dashboard** at `http://localhost:8082/dashboard.html`.
+7. **Check the dashboard update** and confirm that the new ticket appears.
+8. **Test the main controls**: region filters, category filters, warning clocks, worker claim lock, and CSV download.
+
+---
+
+## 🔌 API Endpoints
+
+| Method | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| POST | `/api/tickets/submit` | Create a new SOS ticket from the citizen page. |
+| GET | `/api/tickets/live` | Fetch live emergency tickets for the dashboard. |
+| GET | `/api/tickets/stats` | Fetch dashboard counts for active, critical, medium, low, medical, flood, and rescue tickets. |
+| POST | `/api/tickets/{id}/claim?workerName=Name` | Claim a ticket and lock it to one rescue worker. |
+| DELETE | `/api/tickets/{id}/resolve` | Resolve and remove a completed ticket. |
+
+
+
+
+
 ## 🌟 Core Architecture & Technical Highlights (✅ Feature List: What Users Can Do)
 
 * **Send Offline Help Signals**: Citizens trapped in a disaster can type a message and send their exact location coordinates without any internet connection.
@@ -18,7 +135,16 @@
 * **Single-Page Command Dashboard**: The dashboard updates tickets, filters, and timers without reloading the browser, making it faster and smoother during emergency operations.
 
 ---
+## 🚀 Future Scope
 
+* **Real LoRa mesh device integration**: Connect the software to physical LoRa devices for long-range offline emergency communication.
+* **SMS gateway fallback**: Allow SOS messages to enter the system through SMS when mobile data is not available.
+* **Offline map tiles**: Add local map files so operators can view locations even without online maps.
+* **Role-based login**: Add separate access for citizens, command operators, rescue workers, and admins.
+* **Android PWA support**: Make the citizen page installable on Android phones as a lightweight offline-ready app.
+* **Multi-command-center sync when internet returns**: Sync local emergency records between different command centers after the network comes back.
+
+---
 ## 🌐 IMPORTANT NOTE (Cloud vs. Local Offline)
 
 > ⚠️ Read Before Testing: This app is engineered as a Hybrid Resilience Matrix.

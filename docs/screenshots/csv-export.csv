@@ -1,0 +1,11 @@
+Incident ID,Priority,Region,Category,Summary,Latitude,Longitude,Status,Assigned Unit
+dd136249-9f0c-4581-89df-d07a827119a4,CRITICAL,Bangalore,RESCUE,Immediate heavy rescue crew and medical extraction required.,12.971600,77.594600,Status OPEN,Unassigned
+901e6b1e-7aec-49e4-8359-eb1a6afaba8d,CRITICAL,Kerala,FLOOD,Deploy flood response and evacuation support for residents. [SLA ESCALATED],10.850500,76.271100,Status OPEN,Unassigned
+dfed22ff-0963-47b4-876d-623ca71e6eaf,CRITICAL,Kerala,BLOCKAGE,Traffic rescue and clearance crew needed to restore access. [SLA ESCALATED],11.016800,76.955800,Status OPEN,Unassigned
+1f3cd3f7-9331-4302-bb3b-bdf6dc1e074c,CRITICAL,Global,OTHER,Fire brigade and evacuation team required immediately.,28.704100,77.102500,Status OPEN,Unassigned
+b9f2cde9-0a21-4c95-b540-27703b7047b8,CRITICAL,Bangalore,RESCUE,Urgent rescue and structural safety response required.,12.295800,76.639400,Status OPEN,Unassigned
+7cee5b56-8098-42af-8a0c-b1d976096f04,CRITICAL,Kerala,RESCUE,Hazmat support and medical extraction needed.,10.023800,76.308200,Status OPEN,Unassigned
+e13844b6-8f78-44ce-acf2-d026bbe21304,CRITICAL,Bangalore,OTHER,Utility and gas leak response should investigate immediately. [SLA ESCALATED],12.971800,77.641300,Status OPEN,Unassigned
+40bbfde6-f102-480e-b2ea-bb78bfb705f2,CRITICAL,Kerala,BLOCKAGE,Search and rescue with debris clearance required. [SLA ESCALATED],9.931200,76.267300,Status OPEN,Unassigned
+9d2ff17c-c5d6-45ac-95f0-633e1bfca8e3,CRITICAL,GLOBAL,MEDICAL,"A department fire is spreading rapidly through the 4th floor, causing thick smoke that is blocking the stairwell, posing a serious risk to occupants.",21.152400,79.080500,Status OPEN,Unassigned
+76eacb3d-a316-466d-926d-839a9619cd7e,LOW,Bangalore,MEDICAL,Rapid first aid and transport to a medical facility recommended.,12.971900,77.641200,Status OPEN,Unassigned
